@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nestify.Management - Home</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-home"></i>
+                <span>Nestify.Management</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link active">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="facilitybooking.html" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Facility Bookings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="billing.html" class="nav-link">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Billing</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="requests.html" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="communityvotes.html" class="nav-link">
+                        <i class="fas fa-vote-yea"></i>
+                        <span>Community Votes</span>
+                    </a>
+                </li>
+            </ul>
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+            <div class="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="welcome-section">
+                <h1>Welcome to Nestify.Management</h1>
+                <p>Your comprehensive apartment management dashboard</p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Today's Bookings</h3>
+                        <p class="card-number" id="today-bookings">0</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Active Residents</h3>
+                        <p class="card-number" id="active-residents">0</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Pending Requests</h3>
+                        <p class="card-number" id="pending-requests">0</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Monthly Revenue</h3>
+                        <p class="card-number" id="monthly-revenue">$0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
+            authDomain: "nestify-af7a6.firebaseapp.com",
+            projectId: "nestify-af7a6",
+            storageBucket: "nestify-af7a6.firebasestorage.app",
+            messagingSenderId: "462014928709",
+            appId: "1:462014928709:web:330fc6a338208a7fba902c",
+            measurementId: "G-W38L5RXTL2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Check authentication
+        function checkAuth() {
+            const apartmentId = localStorage.getItem('apartmentId');
+            const apartmentCollection = localStorage.getItem('apartmentCollection');
+            
+            if (!apartmentId || !apartmentCollection) {
+                window.location.href = "login.html";
+                return false;
+            }
+            return true;
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            if (!checkAuth()) return;
+
+            try {
+                const apartmentCollection = localStorage.getItem('apartmentCollection');
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                
+                // Get today's bookings for this apartment
+                const bookingsRef = collection(db, apartmentCollection);
+                const todayQuery = query(bookingsRef, where("date", "==", todayStr));
+                const todaySnapshot = await getDocs(todayQuery);
+                document.getElementById('today-bookings').textContent = todaySnapshot.size;
+                
+                // For demo purposes, set some default values
+                document.getElementById('active-residents').textContent = "156";
+                document.getElementById('pending-requests').textContent = "8";
+                document.getElementById('monthly-revenue').textContent = "$12,450";
+                
+            } catch (error) {
+                console.error("Error loading dashboard data:", error);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) return;
+            
+            // Logout button
+            document.getElementById('logout-btn').onclick = logout;
+            
+            // Initialize dashboard
+            loadDashboardData();
+        });
+    </script>
+    
+    <script src="script.js"></script>
+</body>
+</html>

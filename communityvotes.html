@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nestify.Management - Community Votes</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-home"></i>
+                <span>Nestify.Management</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="facilitybooking.html" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Facility Bookings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="billing.html" class="nav-link">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Billing</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="requests.html" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="communityvotes.html" class="nav-link active">
+                        <i class="fas fa-vote-yea"></i>
+                        <span>Community Votes</span>
+                    </a>
+                </li>
+            </ul>
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+            <div class="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="welcome-section">
+                <h1>Community Votes</h1>
+                <p>Manage community decisions and voting processes</p>
+                <button id="createPollBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Create New Poll
+                </button>
+                <button id="testPollBtn" class="btn btn-secondary" style="margin-left: 10px;">
+                    <i class="fas fa-flask"></i>
+                    Create Test Poll
+                </button>
+            </div>
+            
+            <!-- Dashboard Stats -->
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-vote-yea"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Active Polls</h3>
+                        <p class="card-number" id="activePollsCount">0</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Total Voters</h3>
+                        <p class="card-number" id="totalVotersCount">0</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Participation Rate</h3>
+                        <p class="card-number" id="participationRate">0%</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Completed Votes</h3>
+                        <p class="card-number" id="completedVotesCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Poll Tabs -->
+            <div class="poll-tabs">
+                <button class="tab-btn active" data-tab="active">Active Polls</button>
+                <button class="tab-btn" data-tab="upcoming">Upcoming</button>
+                <button class="tab-btn" data-tab="past">Past Polls</button>
+            </div>
+
+            <!-- Polls Container -->
+            <div id="pollsContainer" class="polls-container">
+                <!-- Polls will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Create Poll Modal -->
+    <div id="createPollModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Poll</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="createPollForm">
+                <div class="form-group">
+                    <label for="pollTitle">Poll Title *</label>
+                    <input type="text" id="pollTitle" name="pollTitle" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pollDescription">Description *</label>
+                    <textarea id="pollDescription" name="pollDescription" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pollExpiry">Expiry Date (Optional)</label>
+                    <input type="datetime-local" id="pollExpiry" name="pollExpiry">
+                </div>
+                
+                <div class="form-group">
+                    <label>Poll Choices *</label>
+                    <div id="choicesContainer">
+                        <div class="choice-input">
+                            <input type="text" name="choices[]" placeholder="Enter choice option" required>
+                            <button type="button" class="remove-choice" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="choice-input">
+                            <input type="text" name="choices[]" placeholder="Enter choice option" required>
+                            <button type="button" class="remove-choice" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" id="addChoiceBtn" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i>
+                        Add Choice
+                    </button>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelPollBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Create Poll
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Poll Details Modal -->
+    <div id="pollDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="pollDetailsTitle">Poll Details</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div id="pollDetailsContent">
+                <!-- Poll details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, orderBy, doc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
+            authDomain: "nestify-af7a6.firebaseapp.com",
+            projectId: "nestify-af7a6",
+            storageBucket: "nestify-af7a6.firebasestorage.app",
+            messagingSenderId: "462014928709",
+            appId: "1:462014928709:web:330fc6a338208a7fba902c",
+            measurementId: "G-W38L5RXTL2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const analytics = getAnalytics(app);
+
+        // Global variables
+        let currentApartmentId = '';
+        let currentAdminId = '';
+        let currentTab = 'active';
+        let polls = [];
+
+        // Check authentication and get apartment info
+        function checkAuth() {
+            const apartmentId = localStorage.getItem('apartmentId');
+            const userEmail = localStorage.getItem('userEmail');
+            const userName = localStorage.getItem('userName');
+            
+            if (!apartmentId || !userEmail) {
+                window.location.href = "login.html";
+                return false;
+            }
+            
+            currentApartmentId = apartmentId;
+            currentAdminId = userEmail; // Use email as admin ID
+            return true;
+        }
+
+        // Initialize the page
+        function init() {
+            console.log('Initializing Community Vote page...');
+            if (!checkAuth()) {
+                console.log('Authentication failed, redirecting to login...');
+                return;
+            }
+            
+            console.log('Authentication successful, loading polls...');
+            loadPolls();
+            setupEventListeners();
+            updateDashboardStats();
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Create poll button
+            document.getElementById('createPollBtn').addEventListener('click', () => {
+                document.getElementById('createPollModal').style.display = 'block';
+            });
+
+            // Modal close buttons
+            document.querySelectorAll('.close').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.target.closest('.modal').style.display = 'none';
+                });
+            });
+
+            // Cancel poll button
+            document.getElementById('cancelPollBtn').addEventListener('click', () => {
+                document.getElementById('createPollModal').style.display = 'none';
+            });
+
+            // Tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentTab = e.target.dataset.tab;
+                    filterPolls();
+                });
+            });
+
+            // Add choice button
+            document.getElementById('addChoiceBtn').addEventListener('click', addChoiceInput);
+
+            // Remove choice buttons
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-choice')) {
+                    e.target.closest('.choice-input').remove();
+                    updateRemoveButtons();
+                }
+            });
+
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('apartmentId');
+                localStorage.removeItem('apartmentCollection');
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userName');
+                window.location.href = "login.html";
+            });
+
+            // Create poll form
+            document.getElementById('createPollForm').addEventListener('submit', createPoll);
+
+            // Test poll button
+            document.getElementById('testPollBtn').addEventListener('click', createTestPoll);
+
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+        }
+
+        // Add choice input
+        function addChoiceInput() {
+            const container = document.getElementById('choicesContainer');
+            const choiceDiv = document.createElement('div');
+            choiceDiv.className = 'choice-input';
+            choiceDiv.innerHTML = `
+                <input type="text" name="choices[]" placeholder="Enter choice option" required>
+                <button type="button" class="remove-choice">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(choiceDiv);
+            updateRemoveButtons();
+        }
+
+        // Update remove buttons visibility
+        function updateRemoveButtons() {
+            const choices = document.querySelectorAll('.choice-input');
+            choices.forEach((choice, index) => {
+                const removeBtn = choice.querySelector('.remove-choice');
+                if (choices.length > 2) {
+                    removeBtn.style.display = 'block';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            });
+        }
+
+        // Create new poll
+        async function createPoll(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const title = formData.get('pollTitle').trim();
+            const description = formData.get('pollDescription').trim();
+            const expiry = formData.get('pollExpiry');
+            const choices = Array.from(formData.getAll('choices[]')).filter(choice => choice.trim() !== '');
+
+            if (choices.length < 2) {
+                alert('Please add at least 2 choices for the poll.');
+                return;
+            }
+
+            try {
+                const pollData = {
+                    title: title,
+                    description: description,
+                    choices: choices.map(choice => ({
+                        text: choice.trim(),
+                        votes: 0,
+                        voters: []
+                    })),
+                    createdBy: currentAdminId,
+                    apartmentId: currentApartmentId,
+                    status: 'ACTIVE',
+                    totalVotes: 0,
+                    voters: [],
+                    createdAt: serverTimestamp(),
+                    expiresAt: expiry ? new Date(expiry) : null
+                };
+
+                const docRef = await addDoc(collection(db, 'apartments', currentApartmentId, 'polls'), pollData);
+                
+                console.log('Poll created successfully with ID:', docRef.id);
+                console.log('Poll data:', pollData);
+                
+                // Reset form and close modal
+                e.target.reset();
+                document.getElementById('createPollModal').style.display = 'none';
+                
+                // Reload polls
+                loadPolls();
+                
+                alert('Poll created successfully!');
+            } catch (error) {
+                console.error('Error creating poll:', error);
+                alert('Error creating poll. Please try again.');
+            }
+        }
+
+        // Create test poll for debugging
+        async function createTestPoll() {
+            try {
+                const testPollData = {
+                    title: "Test Poll - Should we install a new gym?",
+                    description: "This is a test poll to verify the data structure works with the mobile app.",
+                    choices: [
+                        {
+                            text: "Yes, install new gym equipment",
+                            votes: 0,
+                            voters: []
+                        },
+                        {
+                            text: "No, keep the current setup",
+                            votes: 0,
+                            voters: []
+                        }
+                    ],
+                    createdBy: currentAdminId,
+                    apartmentId: currentApartmentId,
+                    status: 'ACTIVE',
+                    totalVotes: 0,
+                    voters: [],
+                    createdAt: serverTimestamp(),
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+                };
+
+                const docRef = await addDoc(collection(db, 'apartments', currentApartmentId, 'polls'), testPollData);
+                
+                console.log('Test poll created successfully with ID:', docRef.id);
+                console.log('Test poll data:', testPollData);
+                
+                // Reload polls
+                loadPolls();
+                
+                alert('Test poll created successfully! Check the mobile app.');
+            } catch (error) {
+                console.error('Error creating test poll:', error);
+                alert('Error creating test poll. Please try again.');
+            }
+        }
+
+        // Load polls from Firebase
+        async function loadPolls() {
+            try {
+                console.log('Loading polls for apartment:', currentApartmentId);
+                const pollsRef = collection(db, 'apartments', currentApartmentId, 'polls');
+                const q = query(pollsRef, orderBy('createdAt', 'desc'));
+                
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    console.log('Received polls snapshot with', snapshot.size, 'documents');
+                    polls = [];
+                    snapshot.forEach((doc) => {
+                        const poll = { id: doc.id, ...doc.data() };
+                        // Convert Firestore timestamp to Date
+                        if (poll.createdAt) {
+                            poll.createdAt = poll.createdAt.toDate();
+                        }
+                        if (poll.expiresAt) {
+                            poll.expiresAt = poll.expiresAt.toDate();
+                        }
+                        polls.push(poll);
+                    });
+                    
+                    console.log('Processed', polls.length, 'polls');
+                    filterPolls();
+                    updateDashboardStats();
+                });
+            } catch (error) {
+                console.error('Error loading polls:', error);
+                showError(document.getElementById('pollsContainer'), 'Error loading polls. Please try again.');
+            }
+        }
+
+        // Filter polls based on current tab
+        function filterPolls() {
+            const now = new Date();
+            let filteredPolls = [];
+
+            switch (currentTab) {
+                case 'active':
+                    filteredPolls = polls.filter(poll => {
+                        if (poll.status !== 'ACTIVE') return false;
+                        if (poll.expiresAt && poll.expiresAt < now) return false;
+                        return true;
+                    });
+                    break;
+                case 'upcoming':
+                    filteredPolls = polls.filter(poll => poll.status === 'UPCOMING');
+                    break;
+                case 'past':
+                    filteredPolls = polls.filter(poll => {
+                        if (poll.status === 'ACTIVE' && poll.expiresAt && poll.expiresAt < now) return true;
+                        if (poll.status === 'COMPLETED') return true;
+                        return false;
+                    });
+                    break;
+            }
+
+            displayPolls(filteredPolls);
+        }
+
+        // Display polls in the container
+        function displayPolls(pollsToShow) {
+            const container = document.getElementById('pollsContainer');
+            
+            if (pollsToShow.length === 0) {
+                container.innerHTML = `
+                    <div class="no-polls">
+                        <i class="fas fa-vote-yea"></i>
+                        <p>No ${currentTab} polls found</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                            Click "Create New Poll" to add your first poll!
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pollsToShow.map(poll => `
+                <div class="poll-card" data-poll-id="${poll.id}">
+                    <div class="poll-header">
+                        <h3>${poll.title}</h3>
+                        <span class="poll-status ${poll.status}">${poll.status}</span>
+                    </div>
+                    <p class="poll-description">${poll.description}</p>
+                    <div class="poll-meta">
+                        <span><i class="fas fa-user"></i> Created by: ${poll.createdBy}</span>
+                        <span><i class="fas fa-calendar"></i> Created: ${formatDate(poll.createdAt)}</span>
+                        ${poll.expiresAt ? `<span><i class="fas fa-clock"></i> Expires: ${formatDate(poll.expiresAt)}</span>` : ''}
+                        <span><i class="fas fa-users"></i> ${poll.totalVotes || 0} votes</span>
+                    </div>
+                    <div class="poll-actions">
+                        <button class="btn btn-secondary view-poll-btn" onclick="viewPollDetails('${poll.id}')">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </button>
+                        ${poll.status === 'ACTIVE' ? `
+                            <button class="btn btn-danger delete-poll-btn" onclick="deletePoll('${poll.id}')">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // View poll details
+        window.viewPollDetails = async function(pollId) {
+            const poll = polls.find(p => p.id === pollId);
+            if (!poll) return;
+
+            const modal = document.getElementById('pollDetailsModal');
+            const title = document.getElementById('pollDetailsTitle');
+            const content = document.getElementById('pollDetailsContent');
+
+            title.textContent = poll.title;
+
+            const totalVotes = poll.totalVotes || 0;
+            const choicesHtml = poll.choices.map(choice => {
+                const percentage = totalVotes > 0 ? Math.round((choice.votes / totalVotes) * 100) : 0;
+                return `
+                    <div class="choice-result">
+                        <div class="choice-info">
+                            <span class="choice-text">${choice.text}</span>
+                            <span class="choice-votes">${choice.votes} votes (${percentage}%)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            content.innerHTML = `
+                <div class="poll-details">
+                    <p class="poll-description">${poll.description}</p>
+                    <div class="poll-meta">
+                        <p><strong>Created by:</strong> ${poll.createdBy}</p>
+                        <p><strong>Created:</strong> ${formatDate(poll.createdAt)}</p>
+                        ${poll.expiresAt ? `<p><strong>Expires:</strong> ${formatDate(poll.expiresAt)}</p>` : ''}
+                        <p><strong>Total votes:</strong> ${totalVotes}</p>
+                    </div>
+                    <div class="poll-results">
+                        <h4>Results</h4>
+                        ${choicesHtml}
+                    </div>
+                    <div class="voters-list">
+                        <h4>Voters (${poll.voters.length})</h4>
+                        ${poll.voters.length > 0 ? 
+                            `<ul>${poll.voters.map(voter => `<li>${voter}</li>`).join('')}</ul>` : 
+                            '<p>No votes yet</p>'
+                        }
+                    </div>
+                </div>
+            `;
+
+            modal.style.display = 'block';
+        };
+
+        // Delete poll
+        window.deletePoll = async function(pollId) {
+            if (!confirm('Are you sure you want to delete this poll? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                await deleteDoc(doc(db, 'apartments', currentApartmentId, 'polls', pollId));
+                alert('Poll deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting poll:', error);
+                alert('Error deleting poll. Please try again.');
+            }
+        };
+
+        // Update dashboard statistics
+        function updateDashboardStats() {
+            const now = new Date();
+            const activePolls = polls.filter(poll => {
+                if (poll.status !== 'ACTIVE') return false;
+                if (poll.expiresAt && poll.expiresAt < now) return false;
+                return true;
+            });
+
+            const completedPolls = polls.filter(poll => {
+                if (poll.status === 'ACTIVE' && poll.expiresAt && poll.expiresAt < now) return true;
+                if (poll.status === 'COMPLETED') return true;
+                return false;
+            });
+
+            const totalVotes = polls.reduce((sum, poll) => sum + (poll.totalVotes || 0), 0);
+            const uniqueVoters = new Set(polls.flatMap(poll => poll.voters || [])).size;
+
+            document.getElementById('activePollsCount').textContent = activePolls.length;
+            document.getElementById('totalVotersCount').textContent = uniqueVoters;
+            document.getElementById('completedVotesCount').textContent = completedPolls.length;
+            
+            // Calculate participation rate (assuming 100 residents per apartment)
+            const participationRate = Math.round((uniqueVoters / 100) * 100);
+            document.getElementById('participationRate').textContent = `${participationRate}%`;
+        }
+
+        // Utility function to format date
+        function formatDate(date) {
+            if (!date) return 'N/A';
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html> 

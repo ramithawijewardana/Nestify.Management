@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Nestify.Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="centered">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="gold">Nestify.</span><span class="blue">Management</span>
+            </div>
+            <div class="login-subtitle">SMART APARTMENT MANAGEMENT</div>
+            <input type="text" id="username" placeholder="Username" required/>
+            <input type="password" id="password" placeholder="Password" required/>
+            <button id="login-btn" type="button" class="login-btn">Login</button>
+            <div id="login-error" class="error"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
+            authDomain: "nestify-af7a6.firebaseapp.com",
+            projectId: "nestify-af7a6",
+            storageBucket: "nestify-af7a6.firebasestorage.app",
+            messagingSenderId: "462014928709",
+            appId: "1:462014928709:web:330fc6a338208a7fba902c",
+            measurementId: "G-W38L5RXTL2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Check if user is already logged in
+        if (localStorage.getItem('apartmentId') && localStorage.getItem('apartmentCollection')) {
+            window.location.href = "index.html";
+        }
+
+        // Login function
+        async function loginWithUsernamePassword() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginError = document.getElementById('login-error');
+            const loginBtn = document.getElementById('login-btn');
+
+            if (!username || !password) {
+                loginError.textContent = 'Please enter both username and password';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+
+            try {
+                // Search through apartment collections to find the user
+                const apartmentCollections = ['apartment_1', 'apartment_2']; // Add more as needed
+                let userFound = false;
+                let apartmentId = null;
+                let apartmentCollection = null;
+
+                for (const apartmentCol of apartmentCollections) {
+                    try {
+                        // Get all documents in the apartment collection
+                        const apartmentRef = collection(db, apartmentCol);
+                        const apartmentSnapshot = await getDocs(apartmentRef);
+                        
+                        for (const apartmentDoc of apartmentSnapshot.docs) {
+                            const apartmentDocId = apartmentDoc.id;
+                            
+                            // Check management subcollection
+                            const managementRef = collection(db, apartmentCol, apartmentDocId, 'management');
+                            const managementSnapshot = await getDocs(managementRef);
+                            
+                            for (const managerDoc of managementSnapshot.docs) {
+                                const managerData = managerDoc.data();
+                                if (managerData.username === username && managerData.password === password) {
+                                    userFound = true;
+                                    apartmentId = apartmentDocId;
+                                    apartmentCollection = `${apartmentCol}_bookings`;
+                                    break;
+                                }
+                            }
+                            
+                            if (userFound) break;
+                        }
+                        
+                        if (userFound) break;
+                    } catch (error) {
+                        console.log(`Error checking ${apartmentCol}:`, error);
+                        continue;
+                    }
+                }
+
+                if (userFound) {
+                    // Store apartment info in localStorage
+                    localStorage.setItem('apartmentId', apartmentId);
+                    localStorage.setItem('apartmentCollection', apartmentCollection);
+                    localStorage.setItem('userEmail', username);
+                    localStorage.setItem('userName', 'Admin');
+
+                    // Redirect to dashboard
+                    window.location.href = "index.html";
+                } else {
+                    loginError.textContent = 'Invalid username or password';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginError.textContent = 'Error during login. Please try again.';
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('login-btn').onclick = loginWithUsernamePassword;
+        
+        // Allow login with Enter key
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loginWithUsernamePassword();
+            }
+        });
+    </script>
+</body>
+</html>

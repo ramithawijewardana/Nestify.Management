@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nestify.Management - Facility Bookings</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-home"></i>
+                <span>Nestify.Management</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="facilitybooking.html" class="nav-link active">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Facility Bookings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="billing.html" class="nav-link">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Billing</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="requests.html" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="communityvotes.html" class="nav-link">
+                        <i class="fas fa-vote-yea"></i>
+                        <span>Community Votes</span>
+                    </a>
+                </li>
+            </ul>
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+            <div class="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="welcome-section">
+                <h1>Facility Bookings</h1>
+                <p>Manage and view all facility bookings across the apartment complex</p>
+            </div>
+            
+            <!-- Facility Grid -->
+            <div class="facility-grid" id="facility-grid">
+                <!-- Facilities will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Facility Bookings</h2>
+                <span class="close" id="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="booking-filters">
+                    <div class="filter-group">
+                        <label for="date-filter">Date:</label>
+                        <input type="date" id="date-filter" value="2025-08-14">
+                    </div>
+                </div>
+                
+                <div id="bookings-content">
+                    <!-- Bookings will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="shared.js"></script>
+    <script>
+        // Set default apartment collection for testing if not already set
+        if (!localStorage.getItem('apartmentCollection')) {
+            localStorage.setItem('apartmentCollection', 'apartment_1');
+        }
+        
+        requireAuth();
+
+        // Facility data - matching mobile app capacities
+        const facilities = [
+            {
+                id: 'function-hall',
+                name: 'Function Hall',
+                icon: 'fas fa-glass-cheers',
+                description: 'Large hall for events and celebrations',
+                capacity: '150 people',
+                timeRestriction: null
+            },
+            {
+                id: 'ballroom',
+                name: 'Ballroom',
+                icon: 'fas fa-dancing',
+                description: 'Elegant ballroom for formal events',
+                capacity: '100 people',
+                timeRestriction: null
+            },
+            {
+                id: 'gym',
+                name: 'Gym',
+                icon: 'fas fa-dumbbell',
+                description: 'Fully equipped fitness center',
+                capacity: '30 people',
+                timeRestriction: null
+            },
+            {
+                id: 'tennis-court',
+                name: 'Tennis Court',
+                icon: 'fas fa-table-tennis',
+                description: 'Professional tennis court',
+                capacity: '4 people',
+                timeRestriction: null
+            },
+            {
+                id: 'rooftop',
+                name: 'Rooftop',
+                icon: 'fas fa-building',
+                description: 'Rooftop area for functions',
+                capacity: '80 people',
+                timeRestriction: 'After 6 PM only'
+            },
+            {
+                id: 'kids-play-area',
+                name: 'Kids Play Area',
+                icon: 'fas fa-child',
+                description: 'Safe play area for children',
+                capacity: '25 children',
+                timeRestriction: null
+            },
+            {
+                id: 'swimming-pool',
+                name: 'Swimming Pool',
+                icon: 'fas fa-swimming-pool',
+                description: 'Olympic size swimming pool',
+                capacity: '60 people',
+                timeRestriction: null
+            },
+            {
+                id: 'garden-area',
+                name: 'Garden Area',
+                icon: 'fas fa-seedling',
+                description: 'Beautiful garden for outdoor activities',
+                capacity: '50 people',
+                timeRestriction: null
+            },
+            {
+                id: 'meeting-room',
+                name: 'Meeting Room',
+                icon: 'fas fa-users',
+                description: 'Conference room for meetings',
+                capacity: '15 people',
+                timeRestriction: null
+            }
+        ];
+
+        let currentFacility = null;
+
+        // Load facilities
+        function loadFacilities() {
+            const facilityGrid = document.getElementById('facility-grid');
+            facilityGrid.innerHTML = '';
+
+            facilities.forEach(facility => {
+                const facilityCard = document.createElement('div');
+                facilityCard.className = 'facility-card';
+                facilityCard.onclick = () => openBookingModal(facility);
+                
+                facilityCard.innerHTML = `
+                    <div class="facility-header">
+                        <div class="facility-icon">
+                            <i class="${facility.icon}"></i>
+                        </div>
+                        <div class="facility-info">
+                            <h3>${facility.name}</h3>
+                            <p>${facility.description}</p>
+                        </div>
+                    </div>
+                    <div class="facility-status">
+                        <div class="status-indicator">
+                            <span class="status-dot status-available"></span>
+                            <span>Available</span>
+                        </div>
+                        <div>
+                            <small>Capacity: ${facility.capacity}</small>
+                            ${facility.timeRestriction ? `<br><small>${facility.timeRestriction}</small>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                facilityGrid.appendChild(facilityCard);
+            });
+        }
+
+        // Open booking modal
+        function openBookingModal(facility) {
+            currentFacility = facility;
+            const modal = document.getElementById('booking-modal');
+            const modalTitle = document.getElementById('modal-title');
+            
+            modalTitle.textContent = `${facility.name} - Bookings`;
+            modal.style.display = 'block';
+            
+            loadBookings(facility.name);
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('booking-modal');
+            modal.style.display = 'none';
+            currentFacility = null;
+        }
+
+        // Load bookings for a facility
+        async function loadBookings(facilityName) {
+            const bookingsContent = document.getElementById('bookings-content');
+            const dateFilter = document.getElementById('date-filter');
+            const selectedDate = dateFilter.value;
+            
+            showLoading(bookingsContent, 'Loading bookings...');
+
+            try {
+                const base = getFacilityBookingsBase();
+                console.log("=== DEBUGGING FACILITY BOOKINGS ===");
+                console.log("Facility Name:", facilityName);
+                console.log("Selected Date:", selectedDate);
+                console.log("Apartment Collection:", localStorage.getItem('apartmentCollection'));
+                console.log("Base Collection Path:", base.path);
+                
+                // First, let's get ALL bookings to see what's in the collection
+                console.log("Getting ALL bookings first...");
+                const allBookings = await base.get();
+                console.log("Total documents in collection:", allBookings.size);
+                
+                allBookings.forEach(doc => {
+                    const data = doc.data();
+                    console.log("Document ID:", doc.id);
+                    console.log("Document Data:", data);
+                    console.log("Facility Name in DB:", data.facilityName);
+                    console.log("Date in DB:", data.date);
+                    console.log("---");
+                });
+                
+                let snap;
+                try {
+                    // Query by facility name and date
+                    console.log("Querying with facilityName:", facilityName, "and date:", selectedDate);
+                    snap = await base
+                        .where('facilityName', '==', facilityName)
+                        .where('date', '==', selectedDate)
+                        .orderBy('startTime')
+                        .get();
+                    console.log("Query with facilityName - Results:", snap.size);
+                    
+                    // If no results, try with facilityId
+                    if (snap.size === 0) {
+                        console.log("No results with facilityName, trying facilityId...");
+                        const facilityIdMap = {
+                            'Function Hall': 'function-hall',
+                            'Ballroom': 'ballroom', 
+                            'Gym': 'gym',
+                            'Tennis Court': 'tennis-court',
+                            'Rooftop': 'rooftop',
+                            'Kids Play Area': 'kids-play-area',
+                            'Swimming Pool': 'pool',
+                            'Garden Area': 'garden-area',
+                            'Meeting Room': 'meeting-room'
+                        };
+                        
+                        const facilityId = facilityIdMap[facilityName];
+                        if (facilityId) {
+                            console.log("Trying with facilityId:", facilityId);
+                            snap = await base
+                                .where('facilityId', '==', facilityId)
+                                .where('date', '==', selectedDate)
+                                .orderBy('startTime')
+                                .get();
+                            console.log("Query with facilityId - Results:", snap.size);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Index error, falling back to no ordering:", e);
+                    snap = await base
+                        .where('facilityName', '==', facilityName)
+                        .where('date', '==', selectedDate)
+                        .get();
+                    console.log("Query without ordering - Results:", snap.size);
+                    
+                    // If still no results, try facilityId without ordering
+                    if (snap.size === 0) {
+                        const facilityIdMap = {
+                            'Function Hall': 'function-hall',
+                            'Ballroom': 'ballroom', 
+                            'Gym': 'gym',
+                            'Tennis Court': 'tennis-court',
+                            'Rooftop': 'rooftop',
+                            'Kids Play Area': 'kids-play-area',
+                            'Swimming Pool': 'pool',
+                            'Garden Area': 'garden-area',
+                            'Meeting Room': 'meeting-room'
+                        };
+                        
+                        const facilityId = facilityIdMap[facilityName];
+                        if (facilityId) {
+                            console.log("Trying with facilityId (no ordering):", facilityId);
+                            snap = await base
+                                .where('facilityId', '==', facilityId)
+                                .where('date', '==', selectedDate)
+                                .get();
+                            console.log("Query with facilityId (no ordering) - Results:", snap.size);
+                        }
+                    }
+                }
+
+                console.log("Final query results:", snap.size);
+                snap.forEach(doc => console.log("Found booking:", doc.data()));
+
+                displayBookings(snap, selectedDate);
+                
+            } catch (error) {
+                console.error("Error loading bookings:", error);
+                showError(bookingsContent, "Error loading bookings. Please try again.");
+            }
+        }
+
+        // Helper function to get facility bookings base collection
+        function getFacilityBookingsBase() {
+            const apartmentCollection = localStorage.getItem('apartmentCollection');
+            if (!apartmentCollection) {
+                throw new Error('Apartment collection not set in localStorage');
+            }
+            // Correct Firestore path: <apartmentCollection>/1HgCK9tLiQnkOURHXBtM/facility_bookings/entries/entries/[bookingId]
+            return db
+                .collection(apartmentCollection)
+                .doc('1HgCK9tLiQnkOURHXBtM')
+                .collection('facility_bookings')
+                .doc('entries')
+                .collection('entries');
+        }
+
+        // Display bookings in table
+        function displayBookings(snap, date) {
+            const bookingsContent = document.getElementById('bookings-content');
+            
+            if (snap.empty) {
+                showNoData(bookingsContent, `No bookings found for ${date || 'this date'}`);
+                return;
+            }
+
+            const tableHTML = `
+                <table class="booking-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Room Number</th>
+                            <th>Date</th>
+                            <th>Time Period</th>
+                            <th>Number of People</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${snap.docs.map(doc => {
+                            const booking = doc.data();
+                            console.log("Processing booking:", booking);
+                            
+                            // Calculate end time
+                            const endTime = calculateEndTime(booking.startTime, booking.duration);
+                            
+                            return `
+                                <tr class="booking-row">
+                                    <td>${booking.residentName || 'N/A'}</td>
+                                    <td>${booking.roomNo || 'N/A'}</td>
+                                    <td>${formatDate(booking.date)}</td>
+                                    <td>${formatTime(booking.startTime)} - ${formatTime(endTime)}</td>
+                                    <td>${booking.numberOfAttendees || 'N/A'}</td>
+                                    <td>${booking.notes || 'General use'}</td>
+                                    <td><span class="booking-status status-confirmed">Confirmed</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="viewBookingDetails('${doc.id}')">View</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            bookingsContent.innerHTML = tableHTML;
+        }
+
+        // Helper function to calculate end time
+        function calculateEndTime(startTime, durationMinutes) {
+            if (!startTime || !durationMinutes) return startTime;
+            
+            const [hours, minutes] = startTime.split(':').map(Number);
+            const startDate = new Date();
+            startDate.setHours(hours, minutes, 0, 0);
+            
+            const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+            const endHours = endDate.getHours().toString().padStart(2, '0');
+            const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+            
+            return `${endHours}:${endMinutes}`;
+        }
+
+        // Helper functions for booking actions
+        function viewBookingDetails(bookingId) {
+            console.log('Viewing booking:', bookingId);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFacilities();
+            
+            // Close modal
+            document.getElementById('close-modal').onclick = closeModal;
+            
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('booking-modal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            }
+            
+            // Date filter change
+            document.getElementById('date-filter').addEventListener('change', function(e) {
+                if (currentFacility) {
+                    loadBookings(currentFacility.name);
+                }
+            });
+
+            // Logout button
+            document.getElementById('logout-btn').onclick = logout;
+        });
+    </script>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
