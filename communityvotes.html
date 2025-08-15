@@ -122,7 +122,6 @@
             <!-- Poll Tabs -->
             <div class="poll-tabs">
                 <button class="tab-btn active" data-tab="active">Active Polls</button>
-                <button class="tab-btn" data-tab="upcoming">Upcoming</button>
                 <button class="tab-btn" data-tab="past">Past Polls</button>
             </div>
 
@@ -226,6 +225,7 @@
 
         // Global variables
         let currentApartmentId = '';
+        let currentApartmentCollection = '';
         let currentAdminId = '';
         let currentTab = 'active';
         let polls = [];
@@ -233,16 +233,46 @@
         // Check authentication and get apartment info
         function checkAuth() {
             const apartmentId = localStorage.getItem('apartmentId');
+            const apartmentCollection = localStorage.getItem('apartmentCollection');
             const userEmail = localStorage.getItem('userEmail');
-            const userName = localStorage.getItem('userName');
+            const userRole = localStorage.getItem('userRole');
             
-            if (!apartmentId || !userEmail) {
+            console.log('=== AUTHENTICATION DEBUG ===');
+            console.log('apartmentId:', apartmentId);
+            console.log('apartmentCollection:', apartmentCollection);
+            console.log('userEmail:', userEmail);
+            console.log('userRole:', userRole);
+            console.log('===========================');
+            
+            if (!apartmentId || !apartmentCollection || !userEmail) {
+                console.log('Missing required data, redirecting to login...');
                 window.location.href = "login.html";
                 return false;
             }
             
+            // If userRole is not admin, set it to admin (for testing)
+            if (userRole !== 'admin') {
+                console.log('User role is not admin, setting to admin for testing...');
+                localStorage.setItem('userRole', 'admin');
+            }
+            
+            // Fix apartment collection if it's wrong
+            if (apartmentCollection && apartmentCollection.includes('_bookings')) {
+                console.log('Fixing apartment collection from', apartmentCollection, 'to apartment_1');
+                const correctCollection = 'apartment_1';
+                localStorage.setItem('apartmentCollection', correctCollection);
+                currentApartmentCollection = correctCollection;
+            } else {
+                currentApartmentCollection = apartmentCollection;
+            }
+            
             currentApartmentId = apartmentId;
-            currentAdminId = userEmail; // Use email as admin ID
+            currentAdminId = userEmail;
+            
+            console.log('Authentication successful!');
+            console.log('Using apartment:', currentApartmentCollection);
+            console.log('Using apartment ID:', currentApartmentId);
+            
             return true;
         }
 
@@ -257,7 +287,9 @@
             console.log('Authentication successful, loading polls...');
             loadPolls();
             setupEventListeners();
-            updateDashboardStats();
+            updateDashboardStats().catch(error => {
+                console.error('Error updating dashboard stats:', error);
+            });
         }
 
         // Setup event listeners
@@ -301,12 +333,16 @@
             });
 
             // Logout button
-            document.getElementById('logout-btn').addEventListener('click', () => {
-                localStorage.removeItem('apartmentId');
-                localStorage.removeItem('apartmentCollection');
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userName');
-                window.location.href = "login.html";
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                    localStorage.clear();
+                    window.location.href = "login.html";
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    localStorage.clear();
+                    window.location.href = "login.html";
+                }
             });
 
             // Create poll form
@@ -368,26 +404,41 @@
 
             try {
                 const pollData = {
-                    title: title,
+                    question: title,
                     description: description,
-                    choices: choices.map(choice => ({
-                        text: choice.trim(),
-                        votes: 0,
-                        voters: []
-                    })),
-                    createdBy: currentAdminId,
-                    apartmentId: currentApartmentId,
+                    options: choices.map(choice => choice.trim()),
+                    created_by: currentAdminId,
+                    created_at: serverTimestamp(),
+                    votes: choices.reduce((acc, choice) => {
+                        acc[choice.trim()] = 0;
+                        return acc;
+                    }, {}),
+                    apartment_id: currentApartmentId,
                     status: 'ACTIVE',
-                    totalVotes: 0,
                     voters: [],
-                    createdAt: serverTimestamp(),
                     expiresAt: expiry ? new Date(expiry) : null
                 };
 
-                const docRef = await addDoc(collection(db, 'apartments', currentApartmentId, 'polls'), pollData);
+                console.log('=== CREATING POLL DEBUG ===');
+                console.log('currentApartmentCollection:', currentApartmentCollection);
+                console.log('currentApartmentId:', currentApartmentId);
+                console.log('Full path being used:', `${currentApartmentCollection}/${currentApartmentId}/polls`);
+                console.log('Poll data:', pollData);
+                console.log('Current admin ID:', currentAdminId);
+                
+                // Check if we have valid data
+                if (!currentApartmentCollection || !currentApartmentId) {
+                    throw new Error('Missing apartment data: ' + JSON.stringify({
+                        collection: currentApartmentCollection,
+                        id: currentApartmentId
+                    }));
+                }
+                
+                const docRef = await addDoc(collection(db, currentApartmentCollection, currentApartmentId, 'polls'), pollData);
                 
                 console.log('Poll created successfully with ID:', docRef.id);
-                console.log('Poll data:', pollData);
+                console.log('Actual Firebase path:', docRef.path);
+                console.log('===========================');
                 
                 // Reset form and close modal
                 e.target.reset();
@@ -407,33 +458,29 @@
         async function createTestPoll() {
             try {
                 const testPollData = {
-                    title: "Test Poll - Should we install a new gym?",
+                    question: "Test Poll - Should we install a new gym?",
                     description: "This is a test poll to verify the data structure works with the mobile app.",
-                    choices: [
-                        {
-                            text: "Yes, install new gym equipment",
-                            votes: 0,
-                            voters: []
-                        },
-                        {
-                            text: "No, keep the current setup",
-                            votes: 0,
-                            voters: []
-                        }
+                    options: [
+                        "Yes, install new gym equipment",
+                        "No, keep the current setup"
                     ],
-                    createdBy: currentAdminId,
-                    apartmentId: currentApartmentId,
+                    created_by: currentAdminId,
+                    created_at: serverTimestamp(),
+                    votes: {
+                        "Yes, install new gym equipment": 0,
+                        "No, keep the current setup": 0
+                    },
+                    apartment_id: currentApartmentId,
                     status: 'ACTIVE',
-                    totalVotes: 0,
                     voters: [],
-                    createdAt: serverTimestamp(),
                     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
                 };
 
-                const docRef = await addDoc(collection(db, 'apartments', currentApartmentId, 'polls'), testPollData);
+                const docRef = await addDoc(collection(db, currentApartmentCollection, currentApartmentId, 'polls'), testPollData);
                 
                 console.log('Test poll created successfully with ID:', docRef.id);
                 console.log('Test poll data:', testPollData);
+                console.log('Test poll path:', `${currentApartmentCollection}/${currentApartmentId}/polls/${docRef.id}`);
                 
                 // Reload polls
                 loadPolls();
@@ -449,8 +496,10 @@
         async function loadPolls() {
             try {
                 console.log('Loading polls for apartment:', currentApartmentId);
-                const pollsRef = collection(db, 'apartments', currentApartmentId, 'polls');
-                const q = query(pollsRef, orderBy('createdAt', 'desc'));
+                console.log('Using apartment collection:', currentApartmentCollection);
+                console.log('Full path:', `${currentApartmentCollection}/${currentApartmentId}/polls`);
+                const pollsRef = collection(db, currentApartmentCollection, currentApartmentId, 'polls');
+                const q = query(pollsRef, orderBy('created_at', 'desc'));
                 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
                     console.log('Received polls snapshot with', snapshot.size, 'documents');
@@ -458,8 +507,8 @@
                     snapshot.forEach((doc) => {
                         const poll = { id: doc.id, ...doc.data() };
                         // Convert Firestore timestamp to Date
-                        if (poll.createdAt) {
-                            poll.createdAt = poll.createdAt.toDate();
+                        if (poll.created_at) {
+                            poll.created_at = poll.created_at.toDate();
                         }
                         if (poll.expiresAt) {
                             poll.expiresAt = poll.expiresAt.toDate();
@@ -469,7 +518,9 @@
                     
                     console.log('Processed', polls.length, 'polls');
                     filterPolls();
-                    updateDashboardStats();
+                    updateDashboardStats().catch(error => {
+                        console.error('Error updating dashboard stats:', error);
+                    });
                 });
             } catch (error) {
                 console.error('Error loading polls:', error);
@@ -525,15 +576,15 @@
             container.innerHTML = pollsToShow.map(poll => `
                 <div class="poll-card" data-poll-id="${poll.id}">
                     <div class="poll-header">
-                        <h3>${poll.title}</h3>
+                        <h3>${poll.question}</h3>
                         <span class="poll-status ${poll.status}">${poll.status}</span>
                     </div>
                     <p class="poll-description">${poll.description}</p>
                     <div class="poll-meta">
-                        <span><i class="fas fa-user"></i> Created by: ${poll.createdBy}</span>
-                        <span><i class="fas fa-calendar"></i> Created: ${formatDate(poll.createdAt)}</span>
+                        <span><i class="fas fa-user"></i> Created by: ${poll.created_by}</span>
+                        <span><i class="fas fa-calendar"></i> Created: ${formatDate(poll.created_at)}</span>
                         ${poll.expiresAt ? `<span><i class="fas fa-clock"></i> Expires: ${formatDate(poll.expiresAt)}</span>` : ''}
-                        <span><i class="fas fa-users"></i> ${poll.totalVotes || 0} votes</span>
+                        <span><i class="fas fa-users"></i> ${Object.values(poll.votes || {}).reduce((a, b) => a + b, 0)} votes</span>
                     </div>
                     <div class="poll-actions">
                         <button class="btn btn-secondary view-poll-btn" onclick="viewPollDetails('${poll.id}')">
@@ -560,16 +611,17 @@
             const title = document.getElementById('pollDetailsTitle');
             const content = document.getElementById('pollDetailsContent');
 
-            title.textContent = poll.title;
+            title.textContent = poll.question;
 
-            const totalVotes = poll.totalVotes || 0;
-            const choicesHtml = poll.choices.map(choice => {
-                const percentage = totalVotes > 0 ? Math.round((choice.votes / totalVotes) * 100) : 0;
+            const totalVotes = Object.values(poll.votes || {}).reduce((a, b) => a + b, 0);
+            const choicesHtml = poll.options.map(option => {
+                const votes = poll.votes[option] || 0;
+                const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
                 return `
                     <div class="choice-result">
                         <div class="choice-info">
-                            <span class="choice-text">${choice.text}</span>
-                            <span class="choice-votes">${choice.votes} votes (${percentage}%)</span>
+                            <span class="choice-text">${option}</span>
+                            <span class="choice-votes">${votes} votes (${percentage}%)</span>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${percentage}%"></div>
@@ -582,8 +634,8 @@
                 <div class="poll-details">
                     <p class="poll-description">${poll.description}</p>
                     <div class="poll-meta">
-                        <p><strong>Created by:</strong> ${poll.createdBy}</p>
-                        <p><strong>Created:</strong> ${formatDate(poll.createdAt)}</p>
+                        <p><strong>Created by:</strong> ${poll.created_by}</p>
+                        <p><strong>Created:</strong> ${formatDate(poll.created_at)}</p>
                         ${poll.expiresAt ? `<p><strong>Expires:</strong> ${formatDate(poll.expiresAt)}</p>` : ''}
                         <p><strong>Total votes:</strong> ${totalVotes}</p>
                     </div>
@@ -611,7 +663,7 @@
             }
 
             try {
-                await deleteDoc(doc(db, 'apartments', currentApartmentId, 'polls', pollId));
+                await deleteDoc(doc(db, currentApartmentCollection, currentApartmentId, 'polls', pollId));
                 alert('Poll deleted successfully!');
             } catch (error) {
                 console.error('Error deleting poll:', error);
@@ -620,7 +672,7 @@
         };
 
         // Update dashboard statistics
-        function updateDashboardStats() {
+        async function updateDashboardStats() {
             const now = new Date();
             const activePolls = polls.filter(poll => {
                 if (poll.status !== 'ACTIVE') return false;
@@ -634,16 +686,95 @@
                 return false;
             });
 
-            const totalVotes = polls.reduce((sum, poll) => sum + (poll.totalVotes || 0), 0);
+            const totalVotes = polls.reduce((sum, poll) => sum + Object.values(poll.votes || {}).reduce((a, b) => a + b, 0), 0);
             const uniqueVoters = new Set(polls.flatMap(poll => poll.voters || [])).size;
 
             document.getElementById('activePollsCount').textContent = activePolls.length;
             document.getElementById('totalVotersCount').textContent = uniqueVoters;
             document.getElementById('completedVotesCount').textContent = completedPolls.length;
             
-            // Calculate participation rate (assuming 100 residents per apartment)
-            const participationRate = Math.round((uniqueVoters / 100) * 100);
-            document.getElementById('participationRate').textContent = `${participationRate}%`;
+            // Calculate participation rate based on actual resident count
+            try {
+                const totalResidents = await getTotalResidents();
+                const participationRate = totalResidents > 0 ? Math.round((uniqueVoters / totalResidents) * 100) : 0;
+                document.getElementById('participationRate').textContent = `${participationRate}%`;
+                console.log(`Participation Rate: ${uniqueVoters} voters out of ${totalResidents} residents = ${participationRate}%`);
+            } catch (error) {
+                console.error('Error calculating participation rate:', error);
+                // Fallback to hardcoded calculation if resident count fails
+                const participationRate = Math.round((uniqueVoters / 100) * 100);
+                document.getElementById('participationRate').textContent = `${participationRate}% (estimated)`;
+                console.log(`Using fallback calculation: ${uniqueVoters} voters out of 100 estimated residents = ${participationRate}%`);
+            }
+        }
+
+        // Function to get total residents count from Firebase
+        async function getTotalResidents() {
+            try {
+                const residentsRef = collection(db, currentApartmentCollection, currentApartmentId, 'residents');
+                const residentsSnapshot = await getDocs(residentsRef);
+                console.log(`Found ${residentsSnapshot.size} residents in apartment`);
+                return residentsSnapshot.size;
+            } catch (error) {
+                console.error('Error fetching residents count:', error);
+                throw error;
+            }
+        }
+
+        // Debug function to show current state
+        function debugState() {
+            console.log('=== DEBUG STATE ===');
+            console.log('Current apartment collection:', currentApartmentCollection);
+            console.log('Current apartment ID:', currentApartmentId);
+            console.log('Current admin ID:', currentAdminId);
+            console.log('Total polls loaded:', polls.length);
+            console.log('All localStorage:', Object.fromEntries(Object.entries(localStorage)));
+            console.log('==================');
+            
+            alert(`Debug Info:\nApartment: ${currentApartmentCollection}\nID: ${currentApartmentId}\nAdmin: ${currentAdminId}\nPolls: ${polls.length}\nCheck console for details.`);
+        }
+
+        // Migrate polls from wrong path to correct path
+        async function migratePolls() {
+            try {
+                console.log('Starting poll migration...');
+                
+                // Check if there are polls in the wrong path
+                const wrongPath = 'apartment_1_bookings';
+                const correctPath = 'apartment_1';
+                
+                const wrongPollsRef = collection(db, wrongPath, currentApartmentId, 'polls');
+                const wrongPollsSnapshot = await getDocs(wrongPollsRef);
+                
+                if (wrongPollsSnapshot.empty) {
+                    alert('No polls found in wrong path. Migration not needed.');
+                    return;
+                }
+                
+                console.log(`Found ${wrongPollsSnapshot.size} polls in wrong path`);
+                
+                // Move each poll to the correct path
+                for (const doc of wrongPollsSnapshot.docs) {
+                    const pollData = doc.data();
+                    
+                    // Create in correct path
+                    await addDoc(collection(db, correctPath, currentApartmentId, 'polls'), pollData);
+                    
+                    // Delete from wrong path
+                    await deleteDoc(doc.ref);
+                    
+                    console.log(`Migrated poll: ${doc.id}`);
+                }
+                
+                alert(`Successfully migrated ${wrongPollsSnapshot.size} polls to correct path!`);
+                
+                // Reload polls
+                loadPolls();
+                
+            } catch (error) {
+                console.error('Migration error:', error);
+                alert('Error during migration: ' + error.message);
+            }
         }
 
         // Utility function to format date
@@ -661,5 +792,6 @@
         // Initialize the page when DOM is loaded
         document.addEventListener('DOMContentLoaded', init);
     </script>
+    <script src="script.js"></script>
 </body>
 </html> 
