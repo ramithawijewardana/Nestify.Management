@@ -7,6 +7,159 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Booking Details Modal Styles */
+        .booking-details-content {
+            max-width: 1200px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        /* Main Booking Modal Styles */
+        .modal-content {
+            max-width: 1200px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .booking-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .booking-detail-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .booking-detail-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .booking-detail-card h3 i {
+            font-size: 20px;
+        }
+        
+        .detail-item {
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            text-align: right;
+        }
+        
+        .booking-status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-confirmed {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status-pending {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .status-cancelled {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .booking-actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .btn-action {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .booking-details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .booking-details-content {
+                width: 95%;
+                margin: 20px auto;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -83,12 +236,12 @@
                 <span class="close" id="close-modal">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="booking-filters">
-                    <div class="filter-group">
-                        <label for="date-filter">Date:</label>
+                                 <div class="booking-filters">
+                     <div class="filter-group">
+                         <label for="date-filter">Date:</label>
                         <input type="date" id="date-filter" value="2025-08-14">
-                    </div>
-                </div>
+                     </div>
+                 </div>
                 
                 <div id="bookings-content">
                     <!-- Bookings will be loaded here -->
@@ -97,17 +250,67 @@
         </div>
     </div>
 
+    <!-- Booking Details Modal -->
+    <div id="booking-details-modal" class="modal">
+        <div class="modal-content booking-details-content">
+            <div class="modal-header">
+                <h2 id="details-modal-title">Booking Details</h2>
+                <span class="close" id="close-details-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="booking-details-content">
+                    <!-- Booking details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase Configuration -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="shared.js"></script>
+    <script src="script.js"></script>
     <script>
+        // Immediate debugging - check if buttons exist
+        console.log('=== IMMEDIATE DEBUG ===');
+        console.log('Debug button exists:', !!document.getElementById('debug-state-btn'));
+        console.log('Create test button exists:', !!document.getElementById('create-test-booking-btn'));
+        console.log('Logout button exists:', !!document.getElementById('logout-btn'));
+        console.log('=== END IMMEDIATE DEBUG ===');
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
+            authDomain: "nestify-af7a6.firebaseapp.com",
+            projectId: "nestify-af7a6",
+            storageBucket: "nestify-af7a6.appspot.com",
+            messagingSenderId: "462014928709",
+            appId: "1:462014928709:web:91a79060ea330c5bba902c",
+            measurementId: "G-4K8X9LM211"
+        };
+        
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        
         // Set default apartment collection for testing if not already set
         if (!localStorage.getItem('apartmentCollection')) {
             localStorage.setItem('apartmentCollection', 'apartment_1');
         }
         
-        requireAuth();
+        // Fix apartment collection if it's wrong (remove _bookings suffix)
+        let apartmentCollection = localStorage.getItem('apartmentCollection');
+        if (apartmentCollection && apartmentCollection.includes('_bookings')) {
+            const correctCollection = apartmentCollection.replace('_bookings', '');
+            localStorage.setItem('apartmentCollection', correctCollection);
+            console.log('Fixed apartment collection from', apartmentCollection, 'to', correctCollection);
+        }
+        
+        // Simple authentication check
+        if (!localStorage.getItem('apartmentCollection')) {
+                window.location.href = "login.html";
+        }
 
         // Facility data - matching mobile app capacities
         const facilities = [
@@ -241,7 +444,7 @@
             modal.style.display = 'none';
             currentFacility = null;
         }
-
+        
         // Load bookings for a facility
         async function loadBookings(facilityName) {
             const bookingsContent = document.getElementById('bookings-content');
@@ -348,12 +551,12 @@
 
                 displayBookings(snap, selectedDate);
                 
-            } catch (error) {
-                console.error("Error loading bookings:", error);
+                         } catch (error) {
+                 console.error("Error loading bookings:", error);
                 showError(bookingsContent, "Error loading bookings. Please try again.");
             }
         }
-
+        
         // Helper function to get facility bookings base collection
         function getFacilityBookingsBase() {
             const apartmentCollection = localStorage.getItem('apartmentCollection');
@@ -421,7 +624,7 @@
             
             bookingsContent.innerHTML = tableHTML;
         }
-
+        
         // Helper function to calculate end time
         function calculateEndTime(startTime, durationMinutes) {
             if (!startTime || !durationMinutes) return startTime;
@@ -439,15 +642,198 @@
 
         // Helper functions for booking actions
         function viewBookingDetails(bookingId) {
-            console.log('Viewing booking:', bookingId);
+            console.log('Viewing booking details for ID:', bookingId);
+            
+            // Get the booking data from the current facility's bookings
+            const base = getFacilityBookingsBase();
+            base.doc(bookingId).get().then(doc => {
+                if (doc.exists) {
+                    const booking = doc.data();
+                    showBookingDetailsModal(booking, bookingId);
+                } else {
+                    console.error('Booking not found:', bookingId);
+                    alert('Booking not found!');
+                }
+            }).catch(error => {
+                console.error('Error fetching booking details:', error);
+                alert('Error loading booking details!');
+            });
         }
-
+        
+        // Show booking details modal
+        function showBookingDetailsModal(booking, bookingId) {
+            const modal = document.getElementById('booking-details-modal');
+            const modalTitle = document.getElementById('details-modal-title');
+            const detailsContent = document.getElementById('booking-details-content');
+            
+            modalTitle.textContent = `Booking Details - ${booking.facilityName}`;
+            
+            // Calculate end time
+            const endTime = calculateEndTime(booking.startTime, booking.duration);
+            
+            const detailsHTML = `
+                <div class="booking-details-grid">
+                    <div class="booking-detail-card">
+                        <h3><i class="fas fa-user"></i> Resident Information</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Name:</span>
+                            <span class="detail-value">${booking.residentName || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Room Number:</span>
+                            <span class="detail-value">${booking.roomNo || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">User ID:</span>
+                            <span class="detail-value">${booking.userId || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Booking ID:</span>
+                            <span class="detail-value">${bookingId}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="booking-detail-card">
+                        <h3><i class="fas fa-calendar-alt"></i> Booking Information</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Facility:</span>
+                            <span class="detail-value">${booking.facilityName || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Date:</span>
+                            <span class="detail-value">${formatDate(booking.date)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time Period:</span>
+                            <span class="detail-value">${formatTime(booking.startTime)} - ${formatTime(endTime)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">${booking.duration || 0} minutes</span>
+                        </div>
+                    </div>
+                    
+                    <div class="booking-detail-card">
+                        <h3><i class="fas fa-users"></i> Event Details</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Number of People:</span>
+                            <span class="detail-value">${booking.numberOfAttendees || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Max Capacity:</span>
+                            <span class="detail-value">${booking.maxCapacity || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Purpose:</span>
+                            <span class="detail-value">${booking.notes || 'General use'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">
+                                <span class="booking-status-badge status-${booking.status?.toLowerCase() || 'confirmed'}">
+                                    ${booking.status || 'CONFIRMED'}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="booking-detail-card">
+                        <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Created At:</span>
+                            <span class="detail-value">${formatDateTime(booking.createdAt)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Expires At:</span>
+                            <span class="detail-value">${formatDateTime(booking.expiresAt)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Apartment ID:</span>
+                            <span class="detail-value">${booking.apartmentId || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Facility ID:</span>
+                            <span class="detail-value">${booking.facilityId || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="booking-actions">
+                    <button class="btn-action btn-secondary" onclick="closeDetailsModal()">
+                        <i class="fas fa-times"></i>
+                        Close
+                    </button>
+                    <button class="btn-action btn-danger" onclick="cancelBooking('${bookingId}')">
+                        <i class="fas fa-ban"></i>
+                        Cancel Booking
+                    </button>
+                </div>
+            `;
+            
+            detailsContent.innerHTML = detailsHTML;
+            modal.style.display = 'block';
+        }
+        
+        // Close details modal
+        function closeDetailsModal() {
+            const modal = document.getElementById('booking-details-modal');
+            modal.style.display = 'none';
+        }
+        
+        // Cancel booking (delete function)
+        function cancelBooking(bookingId) {
+            if (confirm('Are you sure you want to cancel and delete this booking? This action cannot be undone.')) {
+                console.log('Cancelling booking:', bookingId);
+                
+                const apartmentCollection = localStorage.getItem('apartmentCollection') || 'apartment_1';
+                const base = db.collection(apartmentCollection).doc('1HgCK9tLiQnkOURHXBtM').collection('facility_bookings').doc('entries').collection('entries');
+                
+                base.doc(bookingId).delete()
+                    .then(() => {
+                        console.log('Booking deleted successfully!');
+                        alert('Booking has been cancelled and deleted successfully!');
+                        
+                        // Close the details modal
+                        closeDetailsModal();
+                        
+                        // Refresh the bookings list if a facility is currently selected
+                        if (currentFacility) {
+                            loadBookings(currentFacility.name);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting booking:', error);
+                        alert('Error deleting booking: ' + error.message);
+                    });
+            }
+        }
+        
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded fired - setting up event listeners');
+            
+            // Load facilities first
             loadFacilities();
             
+            // Set up all event listeners with error handling
+            try {
             // Close modal
-            document.getElementById('close-modal').onclick = closeModal;
+                const closeModalBtn = document.getElementById('close-modal');
+                if (closeModalBtn) {
+                    closeModalBtn.onclick = closeModal;
+                    console.log('Close modal button listener set');
+                } else {
+                    console.error('Close modal button not found!');
+                }
+                
+                // Close details modal
+                const closeDetailsModalBtn = document.getElementById('close-details-modal');
+                if (closeDetailsModalBtn) {
+                    closeDetailsModalBtn.onclick = closeDetailsModal;
+                    console.log('Close details modal button listener set');
+                } else {
+                    console.error('Close details modal button not found!');
+                }
             
             // Close modal when clicking outside
             window.onclick = function(event) {
@@ -457,18 +843,39 @@
                 }
             }
             
-            // Date filter change
-            document.getElementById('date-filter').addEventListener('change', function(e) {
-                if (currentFacility) {
-                    loadBookings(currentFacility.name);
+                         // Date filter change
+                const dateFilter = document.getElementById('date-filter');
+                if (dateFilter) {
+                    dateFilter.addEventListener('change', function(e) {
+                 if (currentFacility) {
+                            loadBookings(currentFacility.name);
+                        }
+                    });
+                    console.log('Date filter listener set');
+                } else {
+                    console.error('Date filter not found!');
                 }
-            });
 
-            // Logout button
-            document.getElementById('logout-btn').onclick = logout;
+                // Logout button
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.onclick = function() {
+                        console.log('Logout button clicked!');
+                        localStorage.clear();
+                        window.location.href = "login.html";
+                    };
+                    console.log('Logout button listener set');
+                } else {
+                    console.error('Logout button not found!');
+                }
+                
+                
+                
+                console.log('All event listeners set up successfully!');
+            } catch (error) {
+                console.error('Error setting up event listeners:', error);
+            }
         });
     </script>
-    
-    <script src="script.js"></script>
 </body>
 </html> 
