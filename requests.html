@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nestify.Management - Requests</title>
+    <title>Nestify.Management - Resident Requests</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="shared.js"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -48,14 +52,12 @@
                     </a>
                 </li>
             </ul>
-            <button id="logout-btn" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </button>
-            <div class="nav-toggle">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
+            <div class="nav-user">
+                <span id="current-user"></span>
+                <button onclick="logout()" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
         </div>
     </nav>
@@ -63,97 +65,238 @@
     <!-- Main Content -->
     <main class="main-content">
         <div class="container">
-            <div class="welcome-section">
-                <h1>Resident Requests</h1>
-                <p>Manage and track resident requests and maintenance issues</p>
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <h1 class="page-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        Resident Requests
+                    </h1>
+                    <p class="page-subtitle">Manage and track resident support requests</p>
+                </div>
+                <div class="header-actions">
+                    <button id="refresh-btn" class="btn btn-secondary">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
             </div>
-            
-            <div class="dashboard-grid">
-                <div class="dashboard-card">
-                    <div class="card-icon">
-                        <i class="fas fa-tools"></i>
+
+            <!-- Search and Filter Section -->
+            <div class="search-section">
+                <div class="search-container">
+                    <div class="search-input-group">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Search by ticket number or resident name...">
+                        <button id="clear-search" class="clear-btn" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div class="card-content">
-                        <h3>Maintenance Requests</h3>
-                        <p class="card-number">23</p>
+                    <div class="filter-group">
+                        <select id="status-filter" class="filter-select">
+                            <option value="">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
+                        <select id="priority-filter" class="filter-select">
+                            <option value="">All Priorities</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                        </select>
+                        <select id="category-filter" class="filter-select">
+                            <option value="">All Categories</option>
+                            <option value="PLUMBING">Plumbing</option>
+                            <option value="ELECTRICAL">Electrical</option>
+                            <option value="CLEANING">Cleaning</option>
+                            <option value="COMPLAINT">Complaint</option>
+                            <option value="OTHER">Other</option>
+                        </select>
                     </div>
                 </div>
-                
-                <div class="dashboard-card">
-                    <div class="card-icon">
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon pending">
                         <i class="fas fa-clock"></i>
                     </div>
-                    <div class="card-content">
-                        <h3>Pending Requests</h3>
-                        <p class="card-number">8</p>
+                    <div class="stat-content">
+                        <h3 id="pending-count">0</h3>
+                        <p>Pending</p>
                     </div>
                 </div>
-                
-                <div class="dashboard-card">
-                    <div class="card-icon">
+                <div class="stat-card">
+                    <div class="stat-icon in-progress">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="in-progress-count">0</h3>
+                        <p>In Progress</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon completed">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="card-content">
-                        <h3>Completed Today</h3>
-                        <p class="card-number">5</p>
+                    <div class="stat-content">
+                        <h3 id="completed-count">0</h3>
+                        <p>Completed</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-count">0</h3>
+                        <p>Total Requests</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requests Table -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>All Requests</h3>
+                    <div class="table-actions">
+                        <span id="results-count" class="results-count">0 requests found</span>
                     </div>
                 </div>
                 
-                <div class="dashboard-card">
-                    <div class="card-icon">
-                        <i class="fas fa-star"></i>
+                <div class="table-wrapper">
+                    <table class="requests-table" id="requests-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket Number</th>
+                                <th>Resident Name</th>
+                                <th>Apartment/Room</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Description</th>
+                                <th>Date Submitted</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-tbody">
+                            <!-- Requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loading-state" class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading requests...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <div class="card-content">
-                        <h3>Average Rating</h3>
-                        <p class="card-number">4.8</p>
-                    </div>
+                    <h3>No requests found</h3>
+                    <p>No resident requests match your current filters.</p>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Firebase Configuration -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    <!-- Request Details Modal -->
+    <div id="request-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Request Details</h2>
+                <button class="modal-close" onclick="closeRequestModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="request-details">
+                    <div class="detail-section">
+                        <h3>Request Information</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>Ticket Number:</label>
+                                <span id="modal-ticket-number">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Resident Name:</label>
+                                <span id="modal-resident-name">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Apartment/Room:</label>
+                                <span id="modal-apartment-room">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Category:</label>
+                                <span id="modal-category">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Priority:</label>
+                                <span id="modal-priority">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Date Submitted:</label>
+                                <span id="modal-date-submitted">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Current Status:</label>
+                                <span id="modal-current-status">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>Description</h3>
+                        <div class="description-content" id="modal-description">
+                            No description provided.
+                        </div>
+                    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
-            authDomain: "nestify-af7a6.firebaseapp.com",
-            projectId: "nestify-af7a6",
-            storageBucket: "nestify-af7a6.firebasestorage.app",
-            messagingSenderId: "462014928709",
-            appId: "1:462014928709:web:330fc6a338208a7fba902c",
-            measurementId: "G-W38L5RXTL2"
-        };
+                    <div class="detail-section">
+                        <h3>Status Management</h3>
+                        <div class="status-management">
+                            <div class="status-selector">
+                                <label for="status-select">Update Status:</label>
+                                <select id="status-select" class="status-select">
+                                    <option value="PENDING">Pending</option>
+                                    <option value="IN_PROGRESS">In Progress</option>
+                                    <option value="COMPLETED">Completed</option>
+                                </select>
+                                <button id="update-status-btn" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Update Status
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-        const app = initializeApp(firebaseConfig);
+                    <div class="detail-section">
+                        <h3>Management Comments</h3>
+                        <div class="comments-section">
+                            <div class="comment-input">
+                                <textarea id="comment-input" placeholder="Add a comment or note about this request..."></textarea>
+                                <button id="add-comment-btn" class="btn btn-secondary">
+                                    <i class="fas fa-comment"></i>
+                                    Add Comment
+                                </button>
+                            </div>
+                            <div id="comments-list" class="comments-list">
+                                <!-- Comments will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // Check authentication
-        function checkAuth() {
-            const apartmentId = localStorage.getItem('apartmentId');
-            const apartmentCollection = localStorage.getItem('apartmentCollection');
-            
-            if (!apartmentId || !apartmentCollection) {
-                window.location.href = "login.html";
-                return false;
-            }
-            return true;
-        }
-
-        // Logout function
-        function logout() {
-            localStorage.clear();
-            window.location.href = "login.html";
-        }
-
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!checkAuth()) return;
-            
-            // Logout button
-            document.getElementById('logout-btn').onclick = logout;
-        });
-    </script>
+    <!-- Success/Error Messages -->
+    <div id="message-container" class="message-container"></div>
 
     <script src="script.js"></script>
 </body>
