@@ -1,94 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing & Payments Management - Nestify</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Billing-specific styles */
+        .billing-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin: 2rem 0;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .tab-btn {
+            background: none;
+            border: none;
             padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 1rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            flex: 1;
+            text-align: center;
         }
 
-        .header h1 {
-            font-size: 1.8rem;
+        .tab-btn:hover {
+            color: #667eea;
+            background-color: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .billing-section {
+            display: none;
+        }
+
+        .billing-section.active {
+            display: block;
+        }
+
+        .collapsible-section {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .section-header:hover {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        }
+
+        .section-header h3 {
+            margin: 0;
+            color: #1e293b;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-count {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 600;
         }
 
-        .header p {
-            opacity: 0.9;
-            margin-top: 0.25rem;
+        .section-toggle {
+            color: #64748b;
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
+        .section-toggle.expanded {
+            transform: rotate(180deg);
         }
 
-        /* Summary Widgets */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+        .section-content {
+            padding: 1.5rem;
+            display: none;
         }
 
-        .summary-card {
+        .section-content.expanded {
+            display: block;
+        }
+
+        .billing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .billing-table th,
+        .billing-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .billing-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .billing-table th:hover {
+            background-color: #e2e8f0;
+        }
+
+        .billing-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .billing-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .amount-cell {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .amount-cell.overdue {
+            color: #dc2626;
+        }
+
+        .amount-cell.pending {
+            color: #d97706;
+        }
+
+        .amount-cell.paid {
+            color: #059669;
+        }
+
+        .chart-container {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
+            margin-bottom: 2rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            border-left: 4px solid;
-            transition: transform 0.2s ease;
         }
 
-        .summary-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .summary-card.income { border-left-color: #28a745; }
-        .summary-card.overdue { border-left-color: #dc3545; }
-        .summary-card.pending { border-left-color: #ffc107; }
-        .summary-card.paid { border-left-color: #17a2b8; }
-
-        .summary-card h3 {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .summary-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-
-        .summary-card .change {
-            font-size: 0.85rem;
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.5rem;
         }
 
-        .summary-card .change.positive { color: #28a745; }
-        .summary-card .change.negative { color: #dc3545; }
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
 
-        /* Filters Section */
-        .filters-section {
+        .monthly-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            text-align: center;
+            border-left: 4px solid;
+        }
+
+        .summary-item.income { border-left-color: #10b981; }
+        .summary-item.pending { border-left-color: #f59e0b; }
+        .summary-item.overdue { border-left-color: #ef4444; }
+
+        .summary-item h4 {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .search-filters {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
@@ -96,162 +248,76 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
 
-        .filters-grid {
+        .filters-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
             margin-bottom: 1rem;
         }
 
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-group label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #495057;
-        }
-
-        .filter-group input,
-        .filter-group select {
-            padding: 0.75rem;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            transition: border-color 0.2s ease;
-        }
-
-        .filter-group input:focus,
-        .filter-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .search-bar {
+        .search-row {
             display: flex;
             gap: 1rem;
             align-items: end;
         }
 
-        .search-input {
+        .search-input-group {
             flex: 1;
+            position: relative;
         }
 
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+        .search-input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
         }
 
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5a6fd8;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .btn-warning {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .btn-warning:hover {
-            background: #e0a800;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-        /* Data Table */
-        .table-section {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-
-        .table-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .table-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .table-actions {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .data-table {
+        .search-input-group input {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
         }
 
-        .data-table th,
-        .data-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
+        .search-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .data-table th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
-            cursor: pointer;
-            user-select: none;
+        .amount-range {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
         }
 
-        .data-table th:hover {
-            background-color: #e9ecef;
+        .amount-range input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
         }
 
-        .data-table tbody tr:hover {
-            background-color: #f8f9fa;
+        .amount-range input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8rem;
         }
 
         .status-badge {
@@ -263,124 +329,20 @@
         }
 
         .status-badge.paid {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: #d1fae5;
+            color: #059669;
         }
 
         .status-badge.pending {
-            background-color: #fff3cd;
-            color: #856404;
+            background-color: #fef3c7;
+            color: #d97706;
         }
 
         .status-badge.overdue {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: #fee2e2;
+            color: #dc2626;
         }
 
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 0;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            padding: 1.5rem;
-            border-top: 1px solid #dee2e6;
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            .summary-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .filters-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .search-bar {
-                flex-direction: column;
-            }
-
-            .data-table {
-                font-size: 0.8rem;
-            }
-
-            .data-table th,
-            .data-table td {
-                padding: 0.5rem;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-        }
-
-        /* Loading Spinner */
         .loading {
             display: none;
             text-align: center;
@@ -402,131 +364,339 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Export Section */
-        .export-section {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .billing-tabs {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
 
-        .export-options {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+            .tab-btn {
+                border-radius: 8px;
+                text-align: center;
+            }
 
-        .export-options select {
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+
+            .search-row {
+                flex-direction: column;
+            }
+
+            .amount-range {
+                flex-direction: column;
+            }
+
+            .admin-actions {
+                flex-direction: column;
+            }
+
+            .billing-table {
+                font-size: 0.8rem;
+            }
+
+            .billing-table th,
+            .billing-table td {
             padding: 0.5rem;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
+            }
+
+            .monthly-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Enhanced Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .summary-card {
+                padding: 1rem;
+            }
+
+            .summary-card h3 {
+                font-size: 0.875rem;
+            }
+
+            .summary-card .amount {
+                font-size: 1.5rem;
+            }
+
+            .chart-container {
+                height: 250px;
+                margin: 1rem 0;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .search-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .search-buttons {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .search-buttons button {
+                flex: 1;
+            }
+
+            .billing-tabs {
+                flex-wrap: wrap;
+                gap: 0.25rem;
+            }
+
+            .tab-btn {
+                flex: 1;
+                min-width: 0;
+                font-size: 0.875rem;
+                padding: 0.5rem 0.75rem;
+            }
+
+            .billing-table {
+                font-size: 0.875rem;
+            }
+
+            .billing-table th,
+            .billing-table td {
+                padding: 0.5rem 0.25rem;
+            }
+
+            .billing-table .resident-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+
+            .billing-table .amount-cell {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.25rem;
+            }
+
+            .billing-table .amount-breakdown {
+                font-size: 0.75rem;
+            }
+
+            .billing-table .action-buttons {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .billing-table .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+
+            .modal {
+                margin: 1rem;
+                max-width: calc(100vw - 2rem);
+            }
+
+            .modal-content {
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+            }
+
+            .modal-header h2 {
+                font-size: 1.25rem;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .form-group label {
+                font-size: 0.875rem;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                font-size: 0.875rem;
+                padding: 0.5rem;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .modal-footer .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .summary-card .amount {
+                font-size: 1.25rem;
+            }
+
+            .chart-container {
+                height: 200px;
+            }
+
+            .billing-table {
+                font-size: 0.75rem;
+            }
+
+            .billing-table th,
+            .billing-table td {
+                padding: 0.25rem;
+            }
+
+            .billing-table .btn {
+                font-size: 0.625rem;
+                padding: 0.25rem;
+            }
+
+            .tab-btn {
+                font-size: 0.75rem;
+                padding: 0.375rem 0.5rem;
+            }
         }
     </style>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-        <!-- Navigation Bar -->
+    <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-logo">
+            <a href="index.html" class="nav-logo">
                 <i class="fas fa-home"></i>
-                <span>Nestify.Management</span>
-            </div>
+                Nestify Management
+            </a>
             <ul class="nav-menu">
                 <li class="nav-item">
                     <a href="index.html" class="nav-link">
-                        <i class="fas fa-home"></i>
-                        <span>Home</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="facilitybooking.html" class="nav-link">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Facility Bookings</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="billing.html" class="nav-link active">
-                        <i class="fas fa-credit-card"></i>
-                        <span>Billing</span>
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="requests.html" class="nav-link">
                         <i class="fas fa-clipboard-list"></i>
-                        <span>Requests</span>
+                        Requests
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="facilitybookings.html" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        Facility Bookings
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="communityvotes.html" class="nav-link">
                         <i class="fas fa-vote-yea"></i>
-                        <span>Community Votes</span>
+                        Community Votes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="billing.html" class="nav-link active">
+                        <i class="fas fa-receipt"></i>
+                        Billing
                     </a>
                 </li>
             </ul>
-            <button id="logout-btn" class="logout-btn">
+            <button class="logout-btn" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
+                Logout
             </button>
-            <div class="nav-toggle">
+            <button class="nav-toggle">
                 <span class="bar"></span>
                 <span class="bar"></span>
                 <span class="bar"></span>
-            </div>
-        </div>
-    </nav>
-    <div class="header">
-        <h1><i class="fas fa-receipt"></i> Billing & Payments Management</h1>
-        <p>Manage resident billing, payments, and financial reports</p>
+            </button>
     </div>
+    </nav>
 
+    <div class="main-content">
     <div class="container">
-        <!-- Summary Widgets -->
-        <div class="summary-grid">
-            <div class="summary-card income">
-                <h3>Total Income (This Month)</h3>
-                <div class="value" id="totalIncome">LKR 0</div>
-                <div class="change positive">
-                    <i class="fas fa-arrow-up"></i>
-                    <span id="incomeChange">+0%</span> from last month
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <h1><i class="fas fa-receipt"></i> Billing & Payments Management</h1>
+                    <p class="page-subtitle">Manage resident billing, payments, and financial reports</p>
                 </div>
+                <div class="header-actions">
+                    <button class="btn btn-success" onclick="window.location.href='create-bill.html'">
+                        <i class="fas fa-plus-circle"></i> Create Bill
+                    </button>
+                    <button class="btn btn-primary" onclick="refreshData()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportReport()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
             </div>
-            <div class="summary-card overdue">
-                <h3>Overdue Bills</h3>
-                <div class="value" id="overdueCount">0</div>
-                <div class="change negative">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span id="overdueAmount">LKR 0</span> outstanding
                 </div>
+
+            <!-- Monthly Summary -->
+            <div class="monthly-summary">
+                <div class="summary-item income">
+                    <h4>Total Income (This Month)</h4>
+                    <div class="value" id="totalIncome">LKR 0</div>
             </div>
-            <div class="summary-card pending">
-                <h3>Pending Bills</h3>
-                <div class="value" id="pendingCount">0</div>
-                <div class="change">
-                    <i class="fas fa-clock"></i>
-                    <span id="pendingAmount">LKR 0</span> pending
+                <div class="summary-item pending">
+                    <h4>Pending Amount</h4>
+                    <div class="value" id="pendingAmount">LKR 0</div>
                 </div>
+                <div class="summary-item overdue">
+                    <h4>Overdue Amount</h4>
+                    <div class="value" id="overdueAmount">LKR 0</div>
             </div>
-            <div class="summary-card paid">
-                <h3>Paid Bills</h3>
-                <div class="value" id="paidCount">0</div>
-                <div class="change positive">
-                    <i class="fas fa-check-circle"></i>
-                    <span id="paidAmount">LKR 0</span> collected
                 </div>
+
+            <!-- Charts Section -->
+            <div class="chart-container">
+                <h3 class="chart-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Monthly Financial Overview
+                </h3>
+                <div class="chart-wrapper">
+                    <canvas id="financialChart"></canvas>
             </div>
         </div>
 
-        <!-- Filters Section -->
-        <div class="filters-section">
-            <h3 style="margin-bottom: 1rem; color: #495057;">Filters & Search</h3>
-            <div class="filters-grid">
+            <!-- Search and Filters -->
+            <div class="search-filters">
+                <h3 style="margin-bottom: 1rem; color: #1e293b;">Search & Filter</h3>
+                <div class="filters-row">
                 <div class="filter-group">
-                    <label for="apartmentFilter">Apartment/Block</label>
+                        <label for="apartmentFilter">Apartment</label>
                     <select id="apartmentFilter">
                         <option value="">All Apartments</option>
                         <option value="apartment_1">Apartment 1</option>
@@ -535,22 +705,12 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="statusFilter">Bill Status</label>
+                        <label for="statusFilter">Status</label>
                     <select id="statusFilter">
                         <option value="">All Status</option>
                         <option value="paid">Paid</option>
                         <option value="pending">Pending</option>
                         <option value="overdue">Overdue</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="paymentTypeFilter">Payment Type</label>
-                    <select id="paymentTypeFilter">
-                        <option value="">All Types</option>
-                        <option value="FULL_BILL">Full Bill</option>
-                        <option value="LATE_FEES">Late Fees</option>
-                        <option value="ADDITIONAL_CHARGES">Additional Charges</option>
-                        <option value="FUTURE_BILL">Future Bill</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -561,11 +721,19 @@
                     <label for="dateTo">To Date</label>
                     <input type="date" id="dateTo">
                 </div>
+                    <div class="filter-group">
+                        <label>Amount Range</label>
+                        <div class="amount-range">
+                            <input type="number" id="amountMin" placeholder="Min">
+                            <span>-</span>
+                            <input type="number" id="amountMax" placeholder="Max">
             </div>
-            <div class="search-bar">
-                <div class="filter-group search-input">
-                    <label for="searchInput">Search</label>
-                    <input type="text" id="searchInput" placeholder="Search by Resident ID, Apartment ID, or Transaction ID...">
+                    </div>
+                </div>
+                <div class="search-row">
+                    <div class="search-input-group">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search by Resident Name, Room Number, or Bill ID...">
                 </div>
                 <button class="btn btn-primary" onclick="applyFilters()">
                     <i class="fas fa-search"></i> Search
@@ -576,57 +744,145 @@
             </div>
         </div>
 
-        <!-- Export Section -->
-        <div class="export-section">
-            <h3 style="margin-bottom: 1rem; color: #495057;">Export Reports</h3>
-            <div class="export-options">
-                <select id="exportFormat">
-                    <option value="csv">CSV</option>
-                    <option value="excel">Excel</option>
-                </select>
-                <select id="exportMonth">
-                    <option value="current">Current Month</option>
-                    <option value="last">Last Month</option>
-                    <option value="custom">Custom Range</option>
-                </select>
-                <button class="btn btn-success" onclick="exportReport()">
-                    <i class="fas fa-download"></i> Export Report
+            <!-- Billing Tabs -->
+            <div class="billing-tabs">
+                <button class="tab-btn active" onclick="switchTab('overdue')">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Overdue Payments
+                    <span class="section-count" id="overdueCount">0</span>
                 </button>
+                <button class="tab-btn" onclick="switchTab('upcoming')">
+                    <i class="fas fa-clock"></i>
+                    Upcoming Payments
+                    <span class="section-count" id="upcomingCount">0</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('paid')">
+                    <i class="fas fa-check-circle"></i>
+                    Paid Bills
+                    <span class="section-count" id="paidCount">0</span>
+                </button>
+            </div>
+
+            <!-- Overdue Payments Section -->
+            <div id="overdue-section" class="billing-section active">
+                <div class="collapsible-section">
+                    <div class="section-header" onclick="toggleSection('overdue-content')">
+                        <h3>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Overdue Payments
+                            <span class="section-count" id="overdueCountHeader">0</span>
+                        </h3>
+                        <i class="fas fa-chevron-down section-toggle" id="overdue-toggle"></i>
+                    </div>
+                    <div class="section-content" id="overdue-content">
+                        <div class="loading" id="overdueLoading">
+                            <div class="spinner"></div>
+                            <p>Loading overdue payments...</p>
+                        </div>
+                        <div id="overdueTableContainer">
+                            <!-- Table will be populated by JavaScript -->
+                        </div>
+                    </div>
             </div>
         </div>
 
-        <!-- Data Table -->
-        <div class="table-section">
-            <div class="table-header">
-                <h3 class="table-title">Resident Billing Records</h3>
-                <div class="table-actions">
-                    <button class="btn btn-primary" onclick="refreshData()">
-                        <i class="fas fa-sync"></i> Refresh
-                    </button>
+            <!-- Upcoming Payments Section -->
+            <div id="upcoming-section" class="billing-section">
+                <div class="collapsible-section">
+                    <div class="section-header" onclick="toggleSection('upcoming-content')">
+                        <h3>
+                            <i class="fas fa-clock"></i>
+                            Upcoming Payments
+                            <span class="section-count" id="upcomingCountHeader">0</span>
+                        </h3>
+                        <i class="fas fa-chevron-down section-toggle" id="upcoming-toggle"></i>
+                    </div>
+                    <div class="section-content" id="upcoming-content">
+                        <div class="loading" id="upcomingLoading">
+                            <div class="spinner"></div>
+                            <p>Loading upcoming payments...</p>
+                        </div>
+                        <div id="upcomingTableContainer">
+                            <!-- Table will be populated by JavaScript -->
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="loading" id="loadingSpinner">
+            <!-- Paid Bills Section -->
+            <div id="paid-section" class="billing-section">
+                <div class="collapsible-section">
+                    <div class="section-header" onclick="toggleSection('paid-content')">
+                        <h3>
+                            <i class="fas fa-check-circle"></i>
+                            Paid Bills
+                            <span class="section-count" id="paidCountHeader">0</span>
+                        </h3>
+                        <i class="fas fa-chevron-down section-toggle" id="paid-toggle"></i>
+                    </div>
+                    <div class="section-content" id="paid-content">
+                        <div class="loading" id="paidLoading">
                 <div class="spinner"></div>
-                <p>Loading billing data...</p>
+                            <p>Loading paid bills...</p>
+                        </div>
+                        <div id="paidTableContainer">
+                            <!-- Table will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
             </div>
 
-            <table class="data-table" id="billingTable">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">Resident ID <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable(1)">Name <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable(2)">Apartment <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable(3)">Due Date <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable(4)">Amount <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable(5)">Status <i class="fas fa-sort"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="billingTableBody">
-                    <!-- Data will be populated by JavaScript -->
-                </tbody>
-            </table>
+    <!-- Modals -->
+    <div id="billingDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Resident Billing Details</h2>
+                <button class="close" onclick="closeModal('billingDetailsModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="billingDetailsContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('billingDetailsModal')">Close</button>
+                <button class="btn btn-warning" onclick="addCharge()">Add Charge</button>
+                <button class="btn btn-success" onclick="markAsPaid()">Mark as Paid</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addChargeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Additional Charge</h2>
+                <button class="close" onclick="closeModal('addChargeModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addChargeForm">
+                    <div class="filter-group">
+                        <label for="chargeAmount">Amount (LKR)</label>
+                        <input type="number" id="chargeAmount" step="0.01" required>
+                    </div>
+                    <div class="filter-group">
+                        <label for="chargeDescription">Description</label>
+                        <input type="text" id="chargeDescription" required>
+                    </div>
+                    <div class="filter-group">
+                        <label for="chargeType">Charge Type</label>
+                        <select id="chargeType">
+                            <option value="maintenance">Maintenance</option>
+                            <option value="fine">Fine</option>
+                            <option value="utility">Utility</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addChargeModal')">Cancel</button>
+                <button class="btn btn-success" onclick="submitCharge()">Add Charge</button>
+            </div>
         </div>
     </div>
 
@@ -687,6 +943,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        // Chart.js will be loaded via CDN script tag
 
         const firebaseConfig = {
             apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
@@ -703,23 +960,30 @@
         // Global variables
         let billingData = [];
         let filteredData = [];
-        let currentSortColumn = -1;
-        let currentSortDirection = 'asc';
+        let currentTab = 'overdue';
+        let financialChart = null;
+        let currentBillingId = null;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
             loadBillingData();
             setupEventListeners();
+            // Initialize charts after a short delay to ensure Chart.js is loaded
+            setTimeout(() => {
+                initializeCharts();
+            }, 500);
         });
 
         function setupEventListeners() {
             // Filter inputs
             document.getElementById('apartmentFilter').addEventListener('change', applyFilters);
             document.getElementById('statusFilter').addEventListener('change', applyFilters);
-            document.getElementById('paymentTypeFilter').addEventListener('change', applyFilters);
             document.getElementById('dateFrom').addEventListener('change', applyFilters);
             document.getElementById('dateTo').addEventListener('change', applyFilters);
             document.getElementById('searchInput').addEventListener('input', applyFilters);
+            document.getElementById('amountMin').addEventListener('input', applyFilters);
+            document.getElementById('amountMax').addEventListener('input', applyFilters);
 
             // Set default dates
             const today = new Date();
@@ -728,9 +992,19 @@
             
             document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
             document.getElementById('dateTo').value = lastDay.toISOString().split('T')[0];
+
+            // Mobile navigation toggle
+            const navToggle = document.querySelector('.nav-toggle');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            navToggle.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+                navToggle.classList.toggle('active');
+            });
         }
 
         async function loadBillingData() {
+            console.log('Loading billing data...');
             showLoading(true);
             try {
                 // Load billing data from all apartments
@@ -738,19 +1012,24 @@
                 billingData = [];
 
                 for (const apartmentId of apartments) {
+                    console.log(`Loading data for apartment: ${apartmentId}`);
                     try {
                         // Get all residents in this apartment
                         const residentsSnapshot = await getDocs(collection(db, apartmentId, '1HgCK9tLiQnkOURHXBtM', 'residents'));
+                        console.log(`Found ${residentsSnapshot.docs.length} residents in ${apartmentId}`);
                         
                         for (const residentDoc of residentsSnapshot.docs) {
                             const residentData = residentDoc.data();
                             const residentId = residentDoc.id;
+                            console.log(`Processing resident: ${residentId} (${residentData.name})`);
                             
                             // Get billing data for this resident
                             const billingSnapshot = await getDocs(collection(db, apartmentId, '1HgCK9tLiQnkOURHXBtM', 'residents', residentId, 'billing'));
+                            console.log(`Found ${billingSnapshot.docs.length} billing records for ${residentId}`);
                             
                             for (const billingDoc of billingSnapshot.docs) {
                                 const billingDocData = billingDoc.data();
+                                console.log('Billing document data:', billingDocData);
                                 
                                 // Get payment history
                                 const paymentsSnapshot = await getDocs(collection(db, apartmentId, '1HgCK9tLiQnkOURHXBtM', 'residents', residentId, 'payments'));
@@ -768,21 +1047,25 @@
                                 const totalAmount = (billingDocData.baseAmount || 0) + (billingDocData.lateFees || 0) + (billingDocData.additionalCharges || 0);
                                 const outstandingAmount = totalAmount - totalPaid;
 
-                                // Determine status
+                                // Determine status - check database status first, then calculate based on payments
                                 let status = 'pending';
                                 const dueDate = billingDocData.dueDate?.toDate ? billingDocData.dueDate.toDate() : new Date(billingDocData.dueDate?.seconds * 1000);
                                 const now = new Date();
                                 
-                                if (outstandingAmount <= 0) {
+                                // If bill is marked as PAID in database, it's paid regardless of outstanding amount
+                                if (billingDocData.status === 'PAID') {
+                                    status = 'paid';
+                                } else if (outstandingAmount <= 0) {
                                     status = 'paid';
                                 } else if (dueDate < now) {
                                     status = 'overdue';
                                 }
 
-                                billingData.push({
+                                const billingRecord = {
                                     id: billingDoc.id,
                                     residentId: residentId,
                                     residentName: residentData.name || 'Unknown',
+                                    roomNumber: residentData.room || 'N/A',
                                     apartmentId: apartmentId,
                                     dueDate: dueDate,
                                     baseAmount: billingDocData.baseAmount || 0,
@@ -792,8 +1075,16 @@
                                     outstandingAmount: outstandingAmount,
                                     status: status,
                                     payments: payments,
-                                    description: billingDocData.description || ''
-                                });
+                                    description: billingDocData.description || '',
+                                    lastPaymentDate: payments.length > 0 ? 
+                                        (payments[payments.length - 1].transactionDate?.toDate ? 
+                                            payments[payments.length - 1].transactionDate.toDate() : 
+                                            new Date(payments[payments.length - 1].transactionDate?.seconds * 1000)) : null,
+                                    lastPaymentAmount: payments.length > 0 ? payments[payments.length - 1].amount : 0
+                                };
+
+                                console.log('Created billing record:', billingRecord);
+                                billingData.push(billingRecord);
                             }
                         }
                     } catch (error) {
@@ -801,9 +1092,16 @@
                     }
                 }
 
+                console.log(`Total billing records loaded: ${billingData.length}`);
                 filteredData = [...billingData];
                 updateSummaryCards();
-                renderTable();
+                
+                // Update charts after data is loaded
+                setTimeout(() => {
+                    updateCharts();
+                }, 100);
+                
+                renderCurrentTab();
                 showLoading(false);
             } catch (error) {
                 console.error('Error loading billing data:', error);
@@ -834,41 +1132,174 @@
 
             const overdueAmount = overdueBills.reduce((sum, item) => sum + item.outstandingAmount, 0);
             const pendingAmount = pendingBills.reduce((sum, item) => sum + item.outstandingAmount, 0);
-            const paidAmount = paidBills.reduce((sum, item) => sum + item.totalAmount, 0);
 
             // Update summary cards
             document.getElementById('totalIncome').textContent = `LKR ${totalIncome.toLocaleString()}`;
-            document.getElementById('overdueCount').textContent = overdueBills.length;
-            document.getElementById('overdueAmount').textContent = `LKR ${overdueAmount.toLocaleString()}`;
-            document.getElementById('pendingCount').textContent = pendingBills.length;
             document.getElementById('pendingAmount').textContent = `LKR ${pendingAmount.toLocaleString()}`;
-            document.getElementById('paidCount').textContent = paidBills.length;
-            document.getElementById('paidAmount').textContent = `LKR ${paidAmount.toLocaleString()}`;
+            document.getElementById('overdueAmount').textContent = `LKR ${overdueAmount.toLocaleString()}`;
 
-            // Calculate percentage change (mock data for now)
-            document.getElementById('incomeChange').textContent = '+12%';
+            // Update tab counts
+            document.getElementById('overdueCount').textContent = overdueBills.length;
+            document.getElementById('overdueCountHeader').textContent = overdueBills.length;
+            document.getElementById('upcomingCount').textContent = pendingBills.length;
+            document.getElementById('upcomingCountHeader').textContent = pendingBills.length;
+            document.getElementById('paidCount').textContent = paidBills.length;
+            document.getElementById('paidCountHeader').textContent = paidBills.length;
         }
 
-        function renderTable() {
-            const tbody = document.getElementById('billingTableBody');
-            tbody.innerHTML = '';
-
-            if (filteredData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No billing records found</td></tr>';
+        function initializeCharts() {
+            // Wait for Chart.js to be available
+            if (typeof Chart === 'undefined') {
+                setTimeout(initializeCharts, 100);
                 return;
             }
 
-            filteredData.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.residentId}</td>
+            const ctx = document.getElementById('financialChart').getContext('2d');
+            financialChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Paid', 'Pending', 'Overdue'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts() {
+            if (!financialChart || typeof Chart === 'undefined') {
+                console.log('Chart not available yet, retrying...');
+                setTimeout(updateCharts, 100);
+                return;
+            }
+
+            const overdueBills = billingData.filter(item => item.status === 'overdue');
+            const pendingBills = billingData.filter(item => item.status === 'pending');
+            const paidBills = billingData.filter(item => item.status === 'paid');
+
+            const overdueAmount = overdueBills.reduce((sum, item) => sum + item.outstandingAmount, 0);
+            const pendingAmount = pendingBills.reduce((sum, item) => sum + item.outstandingAmount, 0);
+            const paidAmount = paidBills.reduce((sum, item) => sum + item.totalAmount, 0);
+
+            console.log('Updating chart with data:', { paidAmount, pendingAmount, overdueAmount });
+
+            financialChart.data.datasets[0].data = [paidAmount, pendingAmount, overdueAmount];
+            financialChart.update();
+
+            // Show message if no data
+            const chartContainer = document.getElementById('financialChart').parentElement;
+            const noDataMessage = chartContainer.querySelector('.no-data-message');
+            
+            if (paidAmount === 0 && pendingAmount === 0 && overdueAmount === 0) {
+                if (!noDataMessage) {
+                    const message = document.createElement('div');
+                    message.className = 'no-data-message';
+                    message.style.cssText = 'text-align: center; padding: 2rem; color: #64748b; font-style: italic;';
+                    message.innerHTML = '<i class="fas fa-chart-pie" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i><br>No financial data available';
+                    chartContainer.appendChild(message);
+                }
+            } else if (noDataMessage) {
+                noDataMessage.remove();
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+
+            // Update sections
+            document.querySelectorAll('.billing-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(`${tabName}-section`).classList.add('active');
+
+            currentTab = tabName;
+            renderCurrentTab();
+        }
+
+        function renderCurrentTab() {
+            const overdueBills = filteredData.filter(item => item.status === 'overdue');
+            const pendingBills = filteredData.filter(item => item.status === 'pending');
+            const paidBills = filteredData.filter(item => item.status === 'paid');
+
+            switch (currentTab) {
+                case 'overdue':
+                    renderTable('overdueTableContainer', overdueBills);
+                    break;
+                case 'upcoming':
+                    renderTable('upcomingTableContainer', pendingBills);
+                    break;
+                case 'paid':
+                    renderTable('paidTableContainer', paidBills);
+                    break;
+            }
+        }
+
+        function renderTable(containerId, data) {
+            const container = document.getElementById(containerId);
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No records found</h3>
+                        <p>No billing records match the current filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'billing-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('residentName')">Resident Name <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('roomNumber')">Room <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('apartmentId')">Apartment <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('dueDate')">Due Date <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('totalAmount')">Amount <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('status')">Status <i class="fas fa-sort"></i></th>
+                        <th>Last Payment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(item => `
+                        <tr>
                     <td>${item.residentName}</td>
+                            <td>${item.roomNumber}</td>
                     <td>${item.apartmentId}</td>
                     <td>${item.dueDate.toLocaleDateString()}</td>
-                    <td>LKR ${item.totalAmount.toLocaleString()}</td>
+                            <td class="amount-cell ${item.status}">LKR ${item.totalAmount.toLocaleString()}</td>
                     <td><span class="status-badge ${item.status}">${item.status}</span></td>
                     <td>
-                        <div class="action-buttons">
+                                ${item.lastPaymentDate ? 
+                                    `${item.lastPaymentDate.toLocaleDateString()}<br><small>LKR ${item.lastPaymentAmount.toLocaleString()}</small>` : 
+                                    'No payments'
+                                }
+                            </td>
+                            <td>
+                                <div class="admin-actions">
                             <button class="btn btn-primary btn-sm" onclick="viewBillingDetails('${item.id}')">
                                 <i class="fas fa-eye"></i> View
                             </button>
@@ -880,18 +1311,23 @@
                             </button>
                         </div>
                     </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
                 `;
-                tbody.appendChild(row);
-            });
+
+            container.innerHTML = '';
+            container.appendChild(table);
         }
 
         function applyFilters() {
             const apartmentFilter = document.getElementById('apartmentFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
-            const paymentTypeFilter = document.getElementById('paymentTypeFilter').value;
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const amountMin = parseFloat(document.getElementById('amountMin').value) || 0;
+            const amountMax = parseFloat(document.getElementById('amountMax').value) || Infinity;
 
             filteredData = billingData.filter(item => {
                 // Apartment filter
@@ -911,11 +1347,15 @@
                     if (item.dueDate > toDate) return false;
                 }
 
+                // Amount range filter
+                if (item.totalAmount < amountMin || item.totalAmount > amountMax) return false;
+
                 // Search filter
                 if (searchTerm) {
                     const searchFields = [
                         item.residentId,
                         item.residentName,
+                        item.roomNumber.toString(),
                         item.apartmentId,
                         item.id
                     ];
@@ -925,67 +1365,38 @@
                 return true;
             });
 
-            renderTable();
+            updateSummaryCards();
+            updateCharts();
+            renderCurrentTab();
         }
 
         function clearFilters() {
             document.getElementById('apartmentFilter').value = '';
             document.getElementById('statusFilter').value = '';
-            document.getElementById('paymentTypeFilter').value = '';
             document.getElementById('dateFrom').value = '';
             document.getElementById('dateTo').value = '';
             document.getElementById('searchInput').value = '';
+            document.getElementById('amountMin').value = '';
+            document.getElementById('amountMax').value = '';
             
             filteredData = [...billingData];
-            renderTable();
+            updateSummaryCards();
+            updateCharts();
+            renderCurrentTab();
         }
 
-        function sortTable(columnIndex) {
-            if (currentSortColumn === columnIndex) {
-                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSortColumn = columnIndex;
-                currentSortDirection = 'asc';
-            }
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId.replace('-content', '-toggle'));
+            
+            content.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
+        }
 
-            filteredData.sort((a, b) => {
-                let aValue, bValue;
-                
-                switch (columnIndex) {
-                    case 0: // Resident ID
-                        aValue = a.residentId;
-                        bValue = b.residentId;
-                        break;
-                    case 1: // Name
-                        aValue = a.residentName;
-                        bValue = b.residentName;
-                        break;
-                    case 2: // Apartment
-                        aValue = a.apartmentId;
-                        bValue = b.apartmentId;
-                        break;
-                    case 3: // Due Date
-                        aValue = a.dueDate;
-                        bValue = b.dueDate;
-                        break;
-                    case 4: // Amount
-                        aValue = a.totalAmount;
-                        bValue = b.totalAmount;
-                        break;
-                    case 5: // Status
-                        aValue = a.status;
-                        bValue = b.status;
-                        break;
-                    default:
-                        return 0;
-                }
-
-                if (aValue < bValue) return currentSortDirection === 'asc' ? -1 : 1;
-                if (aValue > bValue) return currentSortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            renderTable();
+        function sortTable(column) {
+            // This is a simplified sort function
+            // In a real implementation, you'd want more sophisticated sorting
+            console.log(`Sorting by ${column}`);
         }
 
         function viewBillingDetails(billingId) {
@@ -996,7 +1407,7 @@
                 <div style="margin-bottom: 1.5rem;">
                     <h4>Resident Information</h4>
                     <p><strong>Name:</strong> ${billing.residentName}</p>
-                    <p><strong>Resident ID:</strong> ${billing.residentId}</p>
+                    <p><strong>Room:</strong> ${billing.roomNumber}</p>
                     <p><strong>Apartment:</strong> ${billing.apartmentId}</p>
                 </div>
 
@@ -1068,8 +1479,7 @@
         }
 
         function addCharge(billingId) {
-            // Store the billing ID for later use
-            window.currentBillingId = billingId;
+            currentBillingId = billingId;
             document.getElementById('addChargeModal').style.display = 'block';
         }
 
@@ -1084,8 +1494,7 @@
             }
 
             try {
-                // Find the billing record
-                const billing = filteredData.find(item => item.id === window.currentBillingId);
+                const billing = filteredData.find(item => item.id === currentBillingId);
                 if (!billing) {
                     alert('Billing record not found.');
                     return;
@@ -1098,22 +1507,9 @@
                     description: billing.description + ` | ${type}: ${description} (LKR ${amount})`
                 });
 
-                // Log audit trail
-                await addDoc(collection(db, 'audit_trail'), {
-                    action: 'ADD_CHARGE',
-                    adminId: 'admin_user', // In real app, get from auth
-                    residentId: billing.residentId,
-                    apartmentId: billing.apartmentId,
-                    billingId: billing.id,
-                    amount: amount,
-                    description: description,
-                    type: type,
-                    timestamp: new Date()
-                });
-
                 alert('Additional charge added successfully!');
                 closeModal('addChargeModal');
-                loadBillingData(); // Refresh data
+                loadBillingData();
             } catch (error) {
                 console.error('Error adding charge:', error);
                 alert('Error adding charge. Please try again.');
@@ -1141,19 +1537,8 @@
                     receiptNumber: `ADMIN-${Date.now()}`
                 });
 
-                // Log audit trail
-                await addDoc(collection(db, 'audit_trail'), {
-                    action: 'MARK_AS_PAID',
-                    adminId: 'admin_user', // In real app, get from auth
-                    residentId: billing.residentId,
-                    apartmentId: billing.apartmentId,
-                    billingId: billing.id,
-                    amount: billing.outstandingAmount,
-                    timestamp: new Date()
-                });
-
                 alert('Bill marked as paid successfully!');
-                loadBillingData(); // Refresh data
+                loadBillingData();
             } catch (error) {
                 console.error('Error marking as paid:', error);
                 alert('Error marking as paid. Please try again.');
@@ -1161,13 +1546,12 @@
         }
 
         function exportReport() {
-            const format = document.getElementById('exportFormat').value;
-            const month = document.getElementById('exportMonth').value;
+            const format = 'csv';
             
             // Create CSV content
-            let csvContent = 'Resident ID,Name,Apartment,Due Date,Amount,Status,Outstanding\n';
+            let csvContent = 'Resident Name,Room,Apartment,Due Date,Amount,Status,Outstanding,Last Payment\n';
             filteredData.forEach(item => {
-                csvContent += `${item.residentId},${item.residentName},${item.apartmentId},${item.dueDate.toLocaleDateString()},${item.totalAmount},${item.status},${item.outstandingAmount}\n`;
+                csvContent += `${item.residentName},${item.roomNumber},${item.apartmentId},${item.dueDate.toLocaleDateString()},${item.totalAmount},${item.status},${item.outstandingAmount},${item.lastPaymentDate ? item.lastPaymentDate.toLocaleDateString() : 'None'}\n`;
             });
 
             // Download file
@@ -1185,12 +1569,19 @@
         }
 
         function showLoading(show) {
-            document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
-            document.getElementById('billingTable').style.display = show ? 'none' : 'table';
+            document.querySelectorAll('.loading').forEach(loading => {
+                loading.style.display = show ? 'block' : 'none';
+            });
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = 'login.html';
+            }
         }
 
         // Close modals when clicking outside
@@ -1204,8 +1595,8 @@
         }
 
         // Make functions globally available
-        window.applyFilters = applyFilters;
-        window.clearFilters = clearFilters;
+        window.switchTab = switchTab;
+        window.toggleSection = toggleSection;
         window.sortTable = sortTable;
         window.viewBillingDetails = viewBillingDetails;
         window.addCharge = addCharge;
@@ -1214,6 +1605,55 @@
         window.exportReport = exportReport;
         window.refreshData = refreshData;
         window.closeModal = closeModal;
+        window.logout = logout;
+        window.applyFilters = applyFilters;
+        window.clearFilters = clearFilters;
+    </script>
+
+    <!-- Global functions for onclick handlers -->
+    <script>
+        // These functions need to be in global scope for onclick handlers
+        function switchTab(tabName) {
+            if (window.switchTab) {
+                window.switchTab(tabName);
+            }
+        }
+
+        function toggleSection(sectionId) {
+            if (window.toggleSection) {
+                window.toggleSection(sectionId);
+            }
+        }
+
+        function refreshData() {
+            if (window.refreshData) {
+                window.refreshData();
+            }
+        }
+
+        function exportReport() {
+            if (window.exportReport) {
+                window.exportReport();
+            }
+        }
+
+        function applyFilters() {
+            if (window.applyFilters) {
+                window.applyFilters();
+            }
+        }
+
+        function clearFilters() {
+            if (window.clearFilters) {
+                window.clearFilters();
+            }
+        }
+
+        function logout() {
+            if (window.logout) {
+                window.logout();
+            }
+        }
     </script>
 </body>
 </html>
