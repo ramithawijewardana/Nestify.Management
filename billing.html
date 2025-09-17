@@ -1068,10 +1068,12 @@
                                 // If bill is marked as PAID in database, it's paid regardless of outstanding amount
                                 if (billingDocData.status === 'PAID') {
                                     status = 'paid';
-                                } else if (outstandingAmount <= 0) {
-                                    status = 'paid';
                                 } else if (dueDate < now) {
                                     status = 'overdue';
+                                } else {
+                                    // For pending bills, don't mark as paid based on historical payments
+                                    // Only mark as paid if the bill status is explicitly PAID
+                                    status = 'pending';
                                 }
 
                                 const billingRecord = {
