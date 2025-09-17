@@ -627,7 +627,7 @@
                 <li class="nav-item">
                     <a href="billing.html" class="nav-link active">
                         <i class="fas fa-receipt"></i>
-                        Billing
+                        Billing & Payments
                     </a>
                 </li>
             </ul>
@@ -1046,6 +1046,19 @@
                                 // Calculate outstanding amount
                                 const totalAmount = (billingDocData.baseAmount || 0) + (billingDocData.lateFees || 0) + (billingDocData.additionalCharges || 0);
                                 const outstandingAmount = totalAmount - totalPaid;
+                                
+                                // Debug logging for new bill
+                                if (billingDocData.id === 'BILL_1758126968930') {
+                                    console.log('New bill found:', {
+                                        baseAmount: billingDocData.baseAmount,
+                                        lateFees: billingDocData.lateFees,
+                                        additionalCharges: billingDocData.additionalCharges,
+                                        totalAmount: totalAmount,
+                                        totalPaid: totalPaid,
+                                        outstandingAmount: outstandingAmount,
+                                        status: billingDocData.status
+                                    });
+                                }
 
                                 // Determine status - check database status first, then calculate based on payments
                                 let status = 'pending';
