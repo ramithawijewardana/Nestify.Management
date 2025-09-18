@@ -1,56 +1,27 @@
 // Firebase initialization for requests functionality
-let db;
-let getRequestsBase;
+// Note: db and getRequestsBase are declared in shared.js
 
 // Initialize Firebase when needed
 function initializeFirebase() {
     console.log('=== INITIALIZING FIREBASE ===');
     console.log('Firebase object:', typeof firebase);
     console.log('Firebase apps:', firebase.apps.length);
+    console.log('Database object available:', typeof db !== 'undefined');
+    console.log('getRequestsBase function available:', typeof getRequestsBase === 'function');
     
-    if (!db) {
-        const firebaseConfig = {
-            apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
-            authDomain: "nestify-af7a6.firebaseapp.com",
-            projectId: "nestify-af7a6",
-            storageBucket: "nestify-af7a6.appspot.com",
-            messagingSenderId: "462014928709",
-            appId: "1:462014928709:web:91a79060ea330c5bba902c",
-            measurementId: "G-4K8X9LM211"
-        };
-        
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-                console.log('Firebase app initialized');
-            } else {
-                console.log('Firebase app already initialized');
-            }
-            
-            db = firebase.firestore();
-            console.log('Firestore database initialized:', typeof db);
-            
-            // Define getRequestsBase function
-            getRequestsBase = function() {
-                const apartmentCollection = localStorage.getItem('apartmentCollection');
-                if (!apartmentCollection) {
-                    throw new Error('Apartment collection not set in localStorage');
-                }
-                return db
-                    .collection(apartmentCollection)
-                    .doc('1HgCK9tLiQnkOURHXBtM')
-                    .collection('requests');
-            };
-            
-            console.log('getRequestsBase function defined:', typeof getRequestsBase);
-            
-        } catch (error) {
-            console.error('Error initializing Firebase:', error);
-            throw error;
-        }
-    } else {
-        console.log('Firebase already initialized');
+    // Firebase and db are already initialized in shared.js
+    // Just verify they're available
+    if (typeof db === 'undefined') {
+        console.error('Database not initialized. Please check shared.js is loaded first.');
+        throw new Error('Database not initialized. Please refresh the page.');
     }
+    
+    if (typeof getRequestsBase === 'undefined') {
+        console.error('getRequestsBase function not available. Please check shared.js is loaded first.');
+        throw new Error('getRequestsBase function not available. Please refresh the page.');
+    }
+    
+    console.log('Firebase and database are ready');
 }
 
 // Mobile Navigation Toggle
