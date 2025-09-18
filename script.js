@@ -1,5 +1,41 @@
-// Firebase initialization for requests functionality
-// Note: db and getRequestsBase are declared in shared.js
+// Firebase configuration and initialization
+const firebaseConfig = {
+  apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
+  authDomain: "nestify-af7a6.firebaseapp.com",
+  projectId: "nestify-af7a6",
+  storageBucket: "nestify-af7a6.appspot.com",
+  messagingSenderId: "462014928709",
+  appId: "1:462014928709:web:91a79060ea330c5bba902c",
+  measurementId: "G-4K8X9LM211"
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
+// Helper functions
+window.requireAuth = function() {
+  if (!localStorage.getItem('apartmentCollection')) {
+    window.location.href = "login.html";
+  }
+};
+
+window.logout = function() {
+  localStorage.clear();
+  window.location.href = "login.html";
+};
+
+// Helper to get the correct base Firestore reference for requests
+window.getRequestsBase = function() {
+  const apartmentCollection = localStorage.getItem('apartmentCollection');
+  if (!apartmentCollection) {
+    throw new Error('Apartment collection not set in localStorage');
+  }
+  // Correct Firestore path: requests (root collection) with apartmentId filter
+  return db.collection('requests');
+};
 
 // Initialize Firebase when needed
 function initializeFirebase() {
@@ -8,18 +44,6 @@ function initializeFirebase() {
     console.log('Firebase apps:', firebase.apps.length);
     console.log('Database object available:', typeof db !== 'undefined');
     console.log('getRequestsBase function available:', typeof getRequestsBase === 'function');
-    
-    // Firebase and db are already initialized in shared.js
-    // Just verify they're available
-    if (typeof db === 'undefined') {
-        console.error('Database not initialized. Please check shared.js is loaded first.');
-        throw new Error('Database not initialized. Please refresh the page.');
-    }
-    
-    if (typeof getRequestsBase === 'undefined') {
-        console.error('getRequestsBase function not available. Please check shared.js is loaded first.');
-        throw new Error('getRequestsBase function not available. Please refresh the page.');
-    }
     
     console.log('Firebase and database are ready');
 }
