@@ -64,4 +64,14 @@ window.getApartmentBase = function() {
     .collection(apartmentCollection)
     .doc('visitors')
     .collection('entries');
+};
+
+// Helper to get the correct base Firestore reference for requests
+window.getRequestsBase = function() {
+  const apartmentCollection = localStorage.getItem('apartmentCollection');
+  if (!apartmentCollection) {
+    throw new Error('Apartment collection not set in localStorage');
+  }
+  // Correct Firestore path: requests (root collection) with apartmentId filter
+  return db.collection('requests');
 }; 
