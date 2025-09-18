@@ -1,19 +1,25 @@
 // Firebase configuration and initialization
-const firebaseConfig = {
-  apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
-  authDomain: "nestify-af7a6.firebaseapp.com",
-  projectId: "nestify-af7a6",
-  storageBucket: "nestify-af7a6.appspot.com",
-  messagingSenderId: "462014928709",
-  appId: "1:462014928709:web:91a79060ea330c5bba902c",
-  measurementId: "G-4K8X9LM211"
-};
+if (typeof firebaseConfig === 'undefined') {
+    window.firebaseConfig = {
+      apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
+      authDomain: "nestify-af7a6.firebaseapp.com",
+      projectId: "nestify-af7a6",
+      storageBucket: "nestify-af7a6.appspot.com",
+      messagingSenderId: "462014928709",
+      appId: "1:462014928709:web:91a79060ea330c5bba902c",
+      measurementId: "G-4K8X9LM211"
+    };
+}
 
 // Initialize Firebase
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(window.firebaseConfig);
 }
-const db = firebase.firestore();
+
+// Initialize database if not already done
+if (typeof db === 'undefined') {
+    window.db = firebase.firestore();
+}
 
 // Helper functions
 window.requireAuth = function() {
@@ -34,7 +40,7 @@ window.getRequestsBase = function() {
     throw new Error('Apartment collection not set in localStorage');
   }
   // Correct Firestore path: requests (root collection) with apartmentId filter
-  return db.collection('requests');
+  return window.db.collection('requests');
 };
 
 // Initialize Firebase when needed
@@ -42,7 +48,7 @@ function initializeFirebase() {
     console.log('=== INITIALIZING FIREBASE ===');
     console.log('Firebase object:', typeof firebase);
     console.log('Firebase apps:', firebase.apps.length);
-    console.log('Database object available:', typeof db !== 'undefined');
+    console.log('Database object available:', typeof window.db !== 'undefined');
     console.log('getRequestsBase function available:', typeof getRequestsBase === 'function');
     
     console.log('Firebase and database are ready');
@@ -209,7 +215,7 @@ async function testDatabaseConnection() {
         console.log('Apartment collection:', apartmentCollection);
         
         // Test 2: Try to read from the apartment collection
-        const apartmentRef = db.collection(apartmentCollection);
+        const apartmentRef = window.db.collection(apartmentCollection);
         const apartmentSnapshot = await apartmentRef.limit(1).get();
         console.log('Apartment collection accessible:', !apartmentSnapshot.empty);
         
@@ -295,7 +301,7 @@ function setupRequestsEventListeners() {
 function setupRealtimeListener() {
     try {
         // Check if database is available
-        if (typeof db === 'undefined') {
+        if (typeof window.db === 'undefined') {
             throw new Error('Database not initialized. Please refresh the page.');
         }
         
@@ -380,11 +386,11 @@ async function loadRequests() {
         
         console.log('=== LOADING REQUESTS DEBUG ===');
         console.log('Current apartment ID:', currentApartmentId);
-        console.log('Database object available:', typeof db !== 'undefined');
+        console.log('Database object available:', typeof window.db !== 'undefined');
         console.log('getRequestsBase function available:', typeof getRequestsBase === 'function');
         
         // Check if database is available
-        if (typeof db === 'undefined') {
+        if (typeof window.db === 'undefined') {
             throw new Error('Database not initialized. Please refresh the page.');
         }
         
@@ -415,7 +421,7 @@ async function loadRequests() {
         if (currentRequests.length === 0) {
             console.log('No requests found in main path, trying backup path...');
             try {
-                const backupRef = db.collection('requests');
+                const backupRef = window.db.collection('requests');
                 const backupSnapshot = await backupRef.get();
                 console.log('Backup snapshot size:', backupSnapshot.size);
                 
@@ -878,11 +884,11 @@ function getRequestsBaseFallback() {
     }
     
     // Check if db is available, if not wait for it
-    if (typeof db === 'undefined') {
+    if (typeof window.db === 'undefined') {
         throw new Error('Database not initialized. Please wait and try again.');
     }
     
-    const path = db
+    const path = window.db
         .collection(apartmentCollection)
         .doc('1HgCK9tLiQnkOURHXBtM')
         .collection('requests');
@@ -895,9 +901,9 @@ function getRequestsBaseFallback() {
 function waitForFirebase() {
     return new Promise((resolve) => {
         const checkFirebase = () => {
-            if (typeof firebase !== 'undefined' && 
-                typeof db !== 'undefined' && 
-                typeof getRequestsBase === 'function') {
+        if (typeof firebase !== 'undefined' && 
+            typeof window.db !== 'undefined' && 
+            typeof getRequestsBase === 'function') {
                 resolve();
             } else {
                 setTimeout(checkFirebase, 100);
@@ -916,16 +922,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('=== DOM CONTENT LOADED ===');
         console.log('Firebase available:', typeof firebase !== 'undefined');
-        console.log('DB available:', typeof db !== 'undefined');
+        console.log('DB available:', typeof window.db !== 'undefined');
         console.log('getRequestsBase available:', typeof getRequestsBase === 'function');
         
         // Always try to initialize Firebase first
         try {
             initializeFirebase();
-            console.log('After Firebase init - DB available:', typeof db !== 'undefined');
+            console.log('After Firebase init - DB available:', typeof window.db !== 'undefined');
             console.log('After Firebase init - getRequestsBase available:', typeof getRequestsBase === 'function');
             
-            if (typeof db !== 'undefined' && typeof getRequestsBase === 'function') {
+            if (typeof window.db !== 'undefined' && typeof getRequestsBase === 'function') {
                 console.log('Initializing requests page...');
                 initializeRequestsPage();
             } else {
