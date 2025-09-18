@@ -1,5 +1,10 @@
-// Firebase configuration and initialization
-if (typeof firebaseConfig === 'undefined') {
+// Prevent multiple executions
+if (window.nestifyScriptLoaded) {
+    console.log('Script already loaded, skipping initialization');
+} else {
+    window.nestifyScriptLoaded = true;
+
+    // Firebase configuration and initialization
     window.firebaseConfig = {
       apiKey: "AIzaSyC3Zbnm-_ghWQiFiDZcQCE4MkR_4WeDAr8",
       authDomain: "nestify-af7a6.firebaseapp.com",
@@ -9,17 +14,14 @@ if (typeof firebaseConfig === 'undefined') {
       appId: "1:462014928709:web:91a79060ea330c5bba902c",
       measurementId: "G-4K8X9LM211"
     };
-}
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(window.firebaseConfig);
-}
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(window.firebaseConfig);
+    }
 
-// Initialize database if not already done
-if (typeof db === 'undefined') {
+    // Initialize database
     window.db = firebase.firestore();
-}
 
 // Helper functions
 window.requireAuth = function() {
@@ -1013,4 +1015,6 @@ function showNoData(element, message = 'No bookings found') {
             <p>${message}</p>
         </div>
     `;
-} 
+}
+
+} // End of the if statement that prevents multiple executions 
